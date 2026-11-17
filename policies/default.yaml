@@ -2,6 +2,13 @@
 name: default_dlp_policy
 version: 1.0.0
 
+# Domains treated as "internal" for recipient classification.
+# Any To/CC/BCC address whose domain is NOT in this list is flagged as external.
+internal_domains:
+  - corp.internal
+  - zeroleak.internal
+  - example.com
+
 destination_rules:
   external:
     block_types:
