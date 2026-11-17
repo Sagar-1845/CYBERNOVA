@@ -24,6 +24,7 @@ interface MaskedTextDisplayProps {
   restoredText?: string;
   entityMapping?: Record<string, string>;
   detectedPlaceholders?: string[];
+  verificationStatus?: 'VERIFIED SAFE' | 'LEAK DETECTED' | 'VERIFICATION FAILED' | 'NOT EXECUTED';
 }
 
 export const MaskedTextDisplay: React.FC<MaskedTextDisplayProps> = ({
@@ -32,10 +33,23 @@ export const MaskedTextDisplay: React.FC<MaskedTextDisplayProps> = ({
   restoredText = '',
   entityMapping = {},
   detectedPlaceholders = [],
+  verificationStatus = 'NOT EXECUTED',
 }) => {
   const [activeTab, setActiveTab] = useState<'masked' | 'original' | 'restored' | 'table'>('masked');
   const [revealedPlaceholders, setRevealedPlaceholders] = useState<Record<string, boolean>>({});
   const [hasCopied, setHasCopied] = useState(false);
+
+  const isVerifiedSafe = verificationStatus === 'VERIFIED SAFE';
+  const payloadLabel = isVerifiedSafe
+    ? 'Sanitized Payload (Dispatched to External LLM)'
+    : 'Sanitized Payload (Blocked - not dispatched)';
+  const statusSentence = isVerifiedSafe
+    ? 'Heuristic verification check: All original sensitive identifiers are replaced with typed placeholders. Verified safe for outbound dispatch.'
+    : verificationStatus === 'LEAK DETECTED'
+    ? 'Heuristic verification check: Outbound transmission blocked: residual unmasked sensitive data or vault tokens detected in payload.'
+    : verificationStatus === 'VERIFICATION FAILED'
+    ? 'Heuristic verification check: Outbound transmission blocked: independent security verification failed.'
+    : 'Heuristic verification check: Outbound transmission blocked: payload verification not executed.';
 
   const toggleReveal = (placeholder: string) => {
     setRevealedPlaceholders((prev) => ({
@@ -87,6 +101,13 @@ export const MaskedTextDisplay: React.FC<MaskedTextDisplayProps> = ({
         icon: <User className="w-3 h-3 text-emerald-400" />,
         bg: 'bg-emerald-950/70 border-emerald-500/80 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.35)]',
         label: 'Person Name',
+      };
+    }
+    if (upper.includes('FINANCIAL')) {
+      return {
+        icon: <CreditCard className="w-3 h-3 text-amber-400" />,
+        bg: 'bg-amber-950/70 border-amber-500/80 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.35)]',
+        label: 'Financial Amount',
       };
     }
     return {
@@ -207,7 +228,13 @@ export const MaskedTextDisplay: React.FC<MaskedTextDisplayProps> = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
             <span className="flex items-center gap-1.5 text-foreground font-semibold">
-              <Lock className="w-3.5 h-3.5 text-[#37d3fc]" /> Sanitized Payload (Dispatched to External LLM)
+              <Lock className="w-3.5 h-3.5 text-[#37d3fc]" /> {payloadLabel}
+              <Badge
+                variant={isVerifiedSafe ? 'green' : verificationStatus === 'NOT EXECUTED' ? 'outline' : 'destructive'}
+                className="ml-2 text-[10px]"
+              >
+                {verificationStatus}
+              </Badge>
             </span>
             <button
               onClick={() => handleCopy(sanitizedText)}
@@ -223,10 +250,8 @@ export const MaskedTextDisplay: React.FC<MaskedTextDisplayProps> = ({
           </div>
 
           <div className="text-[11px] font-mono text-muted-foreground flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#37d3fc] animate-pulse" />
-            <span>
-              All original sensitive identifiers are replaced with typed placeholders. Click any chip to inspect enclave mapping.
-            </span>
+            <span className={cn('w-2 h-2 rounded-full', isVerifiedSafe ? 'bg-indiaGreen animate-pulse' : 'bg-destructive')} />
+            <span>{statusSentence}</span>
           </div>
         </div>
       )}

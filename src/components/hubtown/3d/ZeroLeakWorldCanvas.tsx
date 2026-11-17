@@ -242,7 +242,7 @@ function CameraController({ scrollProgress }: { scrollProgress: number }) {
 const StaticWorldFallback: React.FC = () => (
   <div
     role="img"
-    aria-label="ZeroLeak AI Monolith Visual"
+    aria-label="PrivaGuard AI Monolith Visual"
     className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden bg-[#020A19]"
   >
     {/* Dark Reflective Horizon Gradient */}

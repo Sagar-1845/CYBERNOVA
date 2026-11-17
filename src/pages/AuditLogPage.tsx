@@ -150,7 +150,7 @@ export const AuditLogPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `zeroleak_audit_log_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `privaguard_audit_log_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     toast.success('Exported audit log JSON.');
   };

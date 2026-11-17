@@ -15,7 +15,7 @@ export const HubtownFooter: React.FC = () => {
         aria-hidden="true"
         className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/3 text-[14vw] font-black tracking-tighter text-white/[0.02] dark:text-white/[0.03] pointer-events-none whitespace-nowrap uppercase font-mono"
       >
-        ZEROLEAK.AI
+        PRIVAGUARD.AI
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">

@@ -3,10 +3,11 @@ import { useGSAP } from '@gsap/react';
 import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import { Observer } from 'gsap/Observer';
 
 // Register all requested GSAP plugins
 if (typeof window !== 'undefined') {
-  gsap.registerPlugin(useGSAP, ScrambleTextPlugin, ScrollTrigger, SplitText);
+  gsap.registerPlugin(useGSAP, ScrambleTextPlugin, ScrollTrigger, SplitText, Observer);
 }
 
-export { gsap, useGSAP, ScrambleTextPlugin, ScrollTrigger, SplitText };
+export { gsap, useGSAP, ScrambleTextPlugin, ScrollTrigger, SplitText, Observer };

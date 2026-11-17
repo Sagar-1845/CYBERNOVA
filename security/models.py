@@ -35,6 +35,8 @@ class PIIType(str, Enum):
     PHONE = "PHONE"
     EMAIL = "EMAIL"
     NAME = "NAME"
+    PERSON = "PERSON"
+    FINANCIAL = "FINANCIAL"
     UNKNOWN = "UNKNOWN"
 
 

@@ -56,6 +56,18 @@
   );
 }
 
+/* Premium Midnight-Purple & Electric-Blue Abstract Gradient Background */
+.bg-midnight-cyber {
+  background-color: #020108;
+  background-image:
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(2, 1, 8, 0.88) 0%, rgba(2, 1, 8, 0.45) 60%, transparent 100%),
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(13, 65, 175, 0.32) 0%, rgba(25, 20, 95, 0.18) 45%, transparent 70%),
+    radial-gradient(ellipse 65% 55% at 85% 80%, rgba(118, 28, 178, 0.28) 0%, rgba(65, 15, 115, 0.18) 40%, rgba(18, 5, 48, 0.1) 60%, transparent 75%),
+    radial-gradient(ellipse 50% 45% at 85% 15%, rgba(85, 25, 160, 0.25) 0%, rgba(30, 15, 90, 0.12) 50%, transparent 70%),
+    radial-gradient(ellipse 50% 45% at 15% 85%, rgba(20, 45, 140, 0.26) 0%, rgba(15, 10, 60, 0.12) 50%, transparent 70%),
+    linear-gradient(135deg, #020108 0%, #060217 25%, #080320 50%, #050215 75%, #020108 100%);
+}
+
 @layer base {
   :root {
     /* Enterprise Trustworthy Light Mode */

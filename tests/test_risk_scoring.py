@@ -97,5 +97,29 @@ class TestRiskScoring(unittest.TestCase):
         self.assertNotIn("100% secure", report.engineering_indicator.lower())
 
 
+    def test_financial_entity_risk(self) -> None:
+        """Verifies risk calculation for financial entity."""
+        report = calculate_risk_score(
+            masked_text="Income is {{MASKED_FINANCIAL_1}}",
+            detected_entities=[{"type": "FINANCIAL", "value": "INR 18,50,000"}],
+        )
+        self.assertEqual(report.score, 20.0)
+        self.assertEqual(report.severity, SeverityLevel.LOW)
+
+    def test_critical_risk_band(self) -> None:
+        """Verifies that score >= 85 maps to CRITICAL severity band."""
+        report = calculate_risk_score(
+            masked_text="",
+            detected_entities=[
+                {"type": "AADHAAR"},
+                {"type": "PAN"},
+                {"type": "GSTIN"},
+                {"type": "FINANCIAL"},
+            ],
+        )
+        self.assertGreaterEqual(report.score, 85.0)
+        self.assertEqual(report.severity, SeverityLevel.CRITICAL)
+
+
 if __name__ == "__main__":
     unittest.main()

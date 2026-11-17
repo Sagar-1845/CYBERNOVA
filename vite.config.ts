@@ -26,27 +26,48 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 3000,
     open: false,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
       '/security': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
       '/privacy': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
       '/consent': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
       '/rights': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/mask': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/restore': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/gateway': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/detect': {
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },

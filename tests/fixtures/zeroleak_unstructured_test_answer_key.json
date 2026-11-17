@@ -1,0 +1,386 @@
+{
+  "document": "zeroleak_unstructured_test_doc.txt",
+  "tier_1_entities": [
+    {
+      "type": "PERSON",
+      "value": "Meenakshi Iyer",
+      "tier": "T1",
+      "start": 154,
+      "end": 168
+    },
+    {
+      "type": "AADHAAR",
+      "value": "4821 7396 5010",
+      "tier": "T1",
+      "start": 192,
+      "end": 206
+    },
+    {
+      "type": "PAN",
+      "value": "BQRPI4827K",
+      "tier": "T1",
+      "start": 215,
+      "end": 225
+    },
+    {
+      "type": "PHONE",
+      "value": "+91 9845012367",
+      "tier": "T1",
+      "start": 264,
+      "end": 278
+    },
+    {
+      "type": "PHONE",
+      "value": "7654321098",
+      "tier": "T1",
+      "start": 284,
+      "end": 294
+    },
+    {
+      "type": "EMAIL",
+      "value": "meenakshi.iyer@example.com",
+      "tier": "T1",
+      "start": 303,
+      "end": 329
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "INR 18,50,000",
+      "tier": "T1",
+      "start": 495,
+      "end": 508
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "35,00,000",
+      "tier": "T1",
+      "start": 561,
+      "end": 570
+    },
+    {
+      "type": "BANK_ACCOUNT",
+      "value": "502100387465",
+      "tier": "T1",
+      "start": 594,
+      "end": 606
+    },
+    {
+      "type": "IFSC",
+      "value": "ZLBK0004521",
+      "tier": "T1",
+      "start": 613,
+      "end": 624
+    },
+    {
+      "type": "CREDIT_CARD",
+      "value": "4539 1488 0343 6467",
+      "tier": "T1",
+      "start": 663,
+      "end": 682
+    },
+    {
+      "type": "GSTIN",
+      "value": "29CKLPD9031T1ZA",
+      "tier": "T1",
+      "start": 730,
+      "end": 745
+    },
+    {
+      "type": "PASSPORT",
+      "value": "M2468135",
+      "tier": "T1",
+      "start": 756,
+      "end": 764
+    },
+    {
+      "type": "VOTER_ID",
+      "value": "KRL4839201",
+      "tier": "T1",
+      "start": 775,
+      "end": 785
+    },
+    {
+      "type": "PHONE",
+      "value": "9845098450",
+      "tier": "T1",
+      "start": 876,
+      "end": 886
+    },
+    {
+      "type": "EMAIL",
+      "value": "rohan.deshmukh@example.com",
+      "tier": "T1",
+      "start": 1333,
+      "end": 1359
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "1,42,500",
+      "tier": "T1",
+      "start": 1413,
+      "end": 1421
+    },
+    {
+      "type": "PERSON",
+      "value": "Karthik Raman",
+      "tier": "T1",
+      "start": 1549,
+      "end": 1562
+    },
+    {
+      "type": "PERSON",
+      "value": "सरिता वर्मा",
+      "tier": "T1",
+      "start": 2344,
+      "end": 2355
+    },
+    {
+      "type": "AADHAAR",
+      "value": "3456 7890 1238",
+      "tier": "T1",
+      "start": 2369,
+      "end": 2383
+    },
+    {
+      "type": "PHONE",
+      "value": "9811122233",
+      "tier": "T1",
+      "start": 2392,
+      "end": 2402
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "₹ 12,00,000",
+      "tier": "T1",
+      "start": 2415,
+      "end": 2426
+    }
+  ],
+  "tier_2_entities": [
+    {
+      "type": "DATE_OF_BIRTH",
+      "value": "14/03/1989",
+      "tier": "T2",
+      "start": 338,
+      "end": 348
+    },
+    {
+      "type": "ADDRESS",
+      "value": "Flat 304, Lakeview Residency, 12th Cross, Indiranagar, Bengaluru 560038",
+      "tier": "T2",
+      "start": 367,
+      "end": 438
+    },
+    {
+      "type": "DRIVING_LICENSE",
+      "value": "KA05 20180012345",
+      "tier": "T2",
+      "start": 803,
+      "end": 819
+    },
+    {
+      "type": "PERSON",
+      "value": "Sunil Narayanan",
+      "tier": "T2",
+      "start": 833,
+      "end": 848
+    },
+    {
+      "type": "PERSON",
+      "value": "Rohan Deshmukh",
+      "tier": "T2",
+      "start": 1288,
+      "end": 1302
+    },
+    {
+      "type": "EMPLOYEE_ID",
+      "value": "EMP-20457",
+      "tier": "T2",
+      "start": 1316,
+      "end": 1325
+    },
+    {
+      "type": "PHONE",
+      "value": "98765 43210",
+      "tier": "T2",
+      "start": 1470,
+      "end": 1481
+    },
+    {
+      "type": "MEDICAL_RECORD_NUMBER",
+      "value": "00458213",
+      "tier": "T2",
+      "start": 1568,
+      "end": 1576
+    },
+    {
+      "type": "DATE_OF_BIRTH",
+      "value": "02/11/1975",
+      "tier": "T2",
+      "start": 1582,
+      "end": 1592
+    },
+    {
+      "type": "DIAGNOSIS",
+      "value": "Type 2 diabetes mellitus with early nephropathy",
+      "tier": "T2",
+      "start": 1605,
+      "end": 1652
+    },
+    {
+      "type": "PRESCRIPTION",
+      "value": "Metformin 500 mg twice daily",
+      "tier": "T2",
+      "start": 1665,
+      "end": 1693
+    },
+    {
+      "type": "INSURANCE_POLICY",
+      "value": "STAR-HI-77120394",
+      "tier": "T2",
+      "start": 1716,
+      "end": 1732
+    },
+    {
+      "type": "SECRET",
+      "value": "postgresql://svc_loans:Xk9#mP2$vL7q@10.20.4.15:5432/loans_prod",
+      "tier": "T2",
+      "subtype": "DATABASE_URI",
+      "start": 1806,
+      "end": 1868
+    },
+    {
+      "type": "SECRET",
+      "value": "Bl4ckF!sh#2026",
+      "tier": "T2",
+      "subtype": "PASSWORD",
+      "start": 1911,
+      "end": 1925
+    },
+    {
+      "type": "SECRET",
+      "value": "TEST_AWS_KEY_EXAMPLE_0",
+      "tier": "T2",
+      "subtype": "AWS_KEY",
+      "start": 1971,
+      "end": 1992
+    },
+    {
+      "type": "SECRET",
+      "value": "TEST_AWS_SECRET_EXAMPLE_0",
+      "tier": "T2",
+      "subtype": "AWS_SECRET",
+      "start": 2000,
+      "end": 2023
+    },
+    {
+      "type": "SECRET",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      "tier": "T2",
+      "subtype": "JWT",
+      "start": 2071,
+      "end": 2203
+    },
+    {
+      "type": "SECRET",
+      "value": "https://example.com/alerts/webhook/test_0",
+      "tier": "T2",
+      "subtype": "WEBHOOK_URL",
+      "start": 2220,
+      "end": 2297
+    },
+    {
+      "type": "DOCUMENT_LABEL",
+      "value": "CONFIDENTIAL - board only, do not forward",
+      "tier": "T2",
+      "start": 2461,
+      "end": 2502
+    },
+    {
+      "type": "BUSINESS_CONFIDENTIAL",
+      "value": "Project Kestrel",
+      "tier": "T2",
+      "start": 2507,
+      "end": 2522
+    },
+    {
+      "type": "BUSINESS_CONFIDENTIAL",
+      "value": "acquisition of ZenCart Logistics",
+      "tier": "T2",
+      "start": 2524,
+      "end": 2556
+    }
+  ],
+  "must_not_flag_traps": [
+    {
+      "type": "HELPLINE_PUBLIC",
+      "value": "1800 425 3800",
+      "reason": "Toll-free public helpline",
+      "start": 911,
+      "end": 924
+    },
+    {
+      "type": "ORDER_REF",
+      "value": "123456789012",
+      "reason": "Internal order reference",
+      "start": 967,
+      "end": 979
+    },
+    {
+      "type": "TICKET_REF",
+      "value": "8765 4321 0987",
+      "reason": "Internal ticket reference",
+      "start": 991,
+      "end": 1005
+    },
+    {
+      "type": "TRACKING_NO",
+      "value": "1234 5678 9012 3456",
+      "reason": "Tracking number",
+      "start": 1055,
+      "end": 1074
+    },
+    {
+      "type": "GENERAL_AMOUNT",
+      "value": "INR 500",
+      "reason": "Small fee without income/salary cue",
+      "start": 1099,
+      "end": 1106
+    },
+    {
+      "type": "COMMON_PHRASE",
+      "value": "customer support is available",
+      "reason": "Dictionary phrase",
+      "start": 1112,
+      "end": 1141
+    },
+    {
+      "type": "LEGAL_PHRASE",
+      "value": "terms and conditions apply",
+      "reason": "Standard boilerplate",
+      "start": 1151,
+      "end": 1177
+    },
+    {
+      "type": "INVOICE_NUM",
+      "value": "INV-2026-004512",
+      "reason": "Invoice number",
+      "start": 1187,
+      "end": 1202
+    },
+    {
+      "type": "INVOICE_DATE",
+      "value": "12/03/2026",
+      "reason": "Invoice date (not personal DOB)",
+      "start": 1218,
+      "end": 1228
+    },
+    {
+      "type": "HINDI_PHRASE",
+      "value": "ग्राहकों की सूची संलग्न है",
+      "reason": "General Hindi phrase",
+      "start": 2428,
+      "end": 2454
+    }
+  ]
+}

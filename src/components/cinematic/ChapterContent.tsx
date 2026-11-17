@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CHAPTERS } from './types';
-import { ShieldCheck, Activity, Database, CheckCircle2 } from 'lucide-react';
+import { gsap } from '@/lib/gsap';
 
 interface ChapterContentProps {
   currentChapter: number;
@@ -27,71 +27,85 @@ const fetchChapterMetrics = async (): Promise<MetricsResponse> => {
   return res.json();
 };
 
-/**
- * Custom hook to scramble text per letter over ~1.2s
- */
-function useScrambledText(targetText: string, isMotionOn: boolean, durationMs = 1200): string {
-  const [displayText, setDisplayText] = useState(targetText);
-
-  useEffect(() => {
-    if (!isMotionOn) {
-      setDisplayText(targetText);
-      return;
-    }
-
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$&%';
-    const length = targetText.length;
-    const startTime = performance.now();
-
-    let frameId: number;
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(1, elapsed / durationMs);
-
-      // Stagger resolve from left to right
-      const resolvedCount = Math.floor(progress * length);
-
-      let scrambled = '';
-      for (let i = 0; i < length; i++) {
-        const char = targetText[i];
-        if (char === ' ' || char === '\n') {
-          scrambled += char;
-        } else if (i < resolvedCount) {
-          scrambled += char;
-        } else {
-          scrambled += chars[Math.floor(Math.random() * chars.length)];
-        }
-      }
-
-      setDisplayText(scrambled);
-
-      if (progress < 1) {
-        frameId = requestAnimationFrame(animate);
-      } else {
-        setDisplayText(targetText);
-      }
-    };
-
-    frameId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frameId);
-  }, [targetText, isMotionOn, durationMs]);
-
-  return displayText;
-}
-
 export const ChapterContent: React.FC<ChapterContentProps> = ({
   currentChapter,
   isMotionOn,
 }) => {
   const chapter = CHAPTERS[currentChapter];
+  const isProofChapter = currentChapter === 5;
 
-  // Scramble headline lines
-  const scrambledLine1 = useScrambledText(chapter.headlineLine1, isMotionOn, 1100);
-  const scrambledLine2 = useScrambledText(chapter.headlineLine2, isMotionOn, 1300);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const line1Ref = useRef<HTMLSpanElement>(null);
+  const line2Ref = useRef<HTMLSpanElement>(null);
+  const paragraphRef = useRef<HTMLParagraphElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+
+  // GSAP Masked Reveal (Overflow clip with yPercent, duration ~1.0s, ease "expo.out", overwrite: "auto")
+  useEffect(() => {
+    if (!isMotionOn) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        overwrite: 'auto',
+      });
+
+      if (line1Ref.current && line2Ref.current) {
+        tl.fromTo(
+          [line1Ref.current, line2Ref.current],
+          {
+            yPercent: 110,
+            autoAlpha: 0,
+          },
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 1.0,
+            stagger: 0.08,
+            ease: 'expo.out',
+            clearProps: 'willChange',
+          }
+        );
+      }
+
+      if (paragraphRef.current) {
+        tl.fromTo(
+          paragraphRef.current,
+          {
+            yPercent: 35,
+            autoAlpha: 0,
+          },
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 0.9,
+            ease: 'expo.out',
+          },
+          '-=0.75'
+        );
+      }
+
+      if (ctaRef.current) {
+        tl.fromTo(
+          ctaRef.current,
+          {
+            scale: 0.96,
+            autoAlpha: 0,
+          },
+          {
+            scale: 1,
+            autoAlpha: 1,
+            duration: 0.8,
+            ease: 'expo.out',
+          },
+          '-=0.7'
+        );
+      }
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [currentChapter, isMotionOn]);
 
   // TanStack Query for Chapter 6 HUD metrics
-  const isProofChapter = currentChapter === 5;
   const { data: metrics, isLoading: isMetricsLoading, isError: isMetricsError } = useQuery<MetricsResponse>({
     queryKey: ['chapterProofMetrics'],
     queryFn: fetchChapterMetrics,
@@ -109,22 +123,50 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
       metrics.has_evaluated === true);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-20 flex flex-col items-center justify-center p-6 select-none">
-      <div className="pointer-events-auto max-w-3xl mx-auto text-center flex flex-col items-center mt-auto mb-20 sm:mb-24">
-        {/* Bold Uppercase 2-Line Headline (Inter Tight 700) */}
-        <h1 className="font-headline font-bold text-3xl sm:text-5xl md:text-6xl text-[#d5ddfd] uppercase tracking-[0.02em] leading-[1.08] drop-shadow-[0_4px_24px_rgba(5,10,28,0.8)]">
-          <span className="block text-white">{scrambledLine1}</span>
-          <span className="block text-[#37d3fc]">{scrambledLine2}</span>
+    <div
+      ref={containerRef}
+      className="fixed inset-0 pointer-events-none z-20 flex flex-col items-center justify-center p-6 select-none contain-layout"
+    >
+      <div className="pointer-events-auto max-w-3xl mx-auto text-center flex flex-col items-center mt-auto mb-20 sm:mb-24 relative px-4">
+        {/* Soft dark radial gradient behind text block (55% opacity) for pristine WCAG AA contrast */}
+        <div
+          className="absolute -inset-x-12 -inset-y-8 -z-10 rounded-full pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(5,10,28,0.75)_0%,rgba(5,10,28,0.5)_55%,transparent_85%)] backdrop-blur-[2px]"
+          aria-hidden="true"
+        />
+
+        {/* Masked Reveal Headline (overflow-hidden wrapper + yPercent) */}
+        <h1 className="font-headline font-bold text-3xl sm:text-5xl md:text-6xl text-[#d5ddfd] uppercase tracking-[0.02em] leading-[1.08] drop-shadow-[0_4px_24px_rgba(5,10,28,0.9)]">
+          <div className="overflow-hidden">
+            <span
+              ref={line1Ref}
+              className="block text-white will-change-transform transform-gpu"
+            >
+              {chapter.headlineLine1}
+            </span>
+          </div>
+          <div className="overflow-hidden">
+            <span
+              ref={line2Ref}
+              className="block text-[#bfefff] will-change-transform transform-gpu"
+            >
+              {chapter.headlineLine2}
+            </span>
+          </div>
         </h1>
 
         {/* Small Grey-Blue Paragraph (Max 3 lines, Inter) */}
         {!isProofChapter && (
-          <p className="mt-5 text-xs sm:text-sm md:text-base text-[#94a3b8] max-w-xl font-body leading-relaxed [text-wrap:balance]">
-            {chapter.paragraph}
-          </p>
+          <div className="overflow-hidden">
+            <p
+              ref={paragraphRef}
+              className="mt-5 text-xs sm:text-sm md:text-base text-[#94a3b8] max-w-xl font-body leading-relaxed [text-wrap:balance]"
+            >
+              {chapter.paragraph}
+            </p>
+          </div>
         )}
 
-        {/* Chapter 06 Special: Four HUD Stat Tiles from GET /api/metrics only */}
+        {/* Chapter 06 Special: Four HUD Stat Tiles */}
         {isProofChapter && (
           <div className="w-full mt-6 mb-4">
             {isMetricsLoading ? (
@@ -138,7 +180,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
               </div>
             ) : hasMetricsData ? (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-                {/* Tile 1: Leakage Count */}
                 <div className="p-3.5 bg-[#050a1c]/80 border border-[#37d3fc]/30 rounded-md backdrop-blur-md">
                   <div className="text-[10px] font-ui text-[#94a3b8] uppercase tracking-wider">
                     LEAKAGE COUNT
@@ -148,7 +189,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
                   </div>
                 </div>
 
-                {/* Tile 2: Precision */}
                 <div className="p-3.5 bg-[#050a1c]/80 border border-[#37d3fc]/30 rounded-md backdrop-blur-md">
                   <div className="text-[10px] font-ui text-[#94a3b8] uppercase tracking-wider">
                     PRECISION
@@ -158,7 +198,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
                   </div>
                 </div>
 
-                {/* Tile 3: Reinsertion Accuracy */}
                 <div className="p-3.5 bg-[#050a1c]/80 border border-[#37d3fc]/30 rounded-md backdrop-blur-md">
                   <div className="text-[10px] font-ui text-[#94a3b8] uppercase tracking-wider">
                     REINSERT ACCURACY
@@ -168,7 +207,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
                   </div>
                 </div>
 
-                {/* Tile 4: Latency */}
                 <div className="p-3.5 bg-[#050a1c]/80 border border-[#37d3fc]/30 rounded-md backdrop-blur-md">
                   <div className="text-[10px] font-ui text-[#94a3b8] uppercase tracking-wider">
                     VAULT LATENCY
@@ -189,12 +227,11 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
           </div>
         )}
 
-        {/* Small Outlined Chamfered CTA Button with pixel-chevron icon */}
-        <div className="mt-6 flex flex-col items-center gap-4">
+        {/* Small Outlined Chamfered CTA Button */}
+        <div ref={ctaRef} className="mt-6 flex flex-col items-center gap-4">
           <Link to={chapter.ctaRoute}>
-            <button className="clip-chamfer flex items-center gap-2.5 px-6 py-2.5 border border-[#37d3fc]/60 hover:border-[#37d3fc] bg-[#050a1c]/70 hover:bg-[#050a1c] backdrop-blur-md text-xs font-ui font-bold tracking-[0.16em] uppercase text-[#d5ddfd] hover:text-white transition-all shadow-[0_0_20px_rgba(55,211,252,0.15)] cursor-pointer group">
+            <button className="clip-chamfer flex items-center gap-2.5 px-6 py-2.5 border border-[#37d3fc]/60 hover:border-[#37d3fc] bg-[#050a1c]/70 hover:bg-[#050a1c] backdrop-blur-md text-xs font-ui font-bold tracking-[0.16em] uppercase text-[#d5ddfd] hover:text-white transition-colors shadow-[0_0_8px_rgba(55,211,252,0.15)] cursor-pointer group">
               <span>{chapter.ctaText}</span>
-              {/* Pixel chevron icon */}
               <svg
                 viewBox="0 0 8 8"
                 className="w-2.5 h-2.5 text-[#37d3fc] fill-current group-hover:translate-x-0.5 transition-transform"
@@ -207,7 +244,6 @@ export const ChapterContent: React.FC<ChapterContentProps> = ({
             </button>
           </Link>
 
-          {/* Chapter 06 Footer Line */}
           {isProofChapter && (
             <div className="mt-2 text-[11px] font-ui tracking-widest text-[#94a3b8]/70">
               MineArena 1.0 | Code Commit | BIET Davangere

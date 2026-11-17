@@ -11,7 +11,8 @@
       "AADHAAR",
       "PHONE",
       "EMAIL",
-      "GSTIN"
+      "GSTIN",
+      "FINANCIAL"
     ],
     "strict_leak_check": true
   },

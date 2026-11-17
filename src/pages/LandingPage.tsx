@@ -8,13 +8,12 @@ import { HudBottomBar } from '@/components/cinematic/HudBottomBar';
 import { ChapterContent } from '@/components/cinematic/ChapterContent';
 import { FullscreenMenu } from '@/components/cinematic/FullscreenMenu';
 import { CinematicCanvas } from '@/components/cinematic/3d/CinematicCanvas';
-import { gsap, ScrollTrigger } from '@/lib/gsap';
+import { ScrollTrigger, Observer } from '@/lib/gsap';
+import { cinematicState } from '@/lib/cinematicState';
 
 export const LandingPage: React.FC = () => {
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [currentChapter, setCurrentChapter] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [pointer, setPointer] = useState({ x: 0, y: 0 });
 
   // Motion ON/OFF state (initialized based on user's system preferences)
   const [isMotionOn, setIsMotionOn] = useState(() => {
@@ -25,6 +24,14 @@ export const LandingPage: React.FC = () => {
   });
 
   const scrollTrackRef = useRef<HTMLDivElement>(null);
+  const currentChapterRef = useRef(0);
+
+  // Sync isMotionOn to cinematicState
+  useEffect(() => {
+    cinematicState.isMotionOn = isMotionOn;
+    cinematicState.needsStillFrame = true;
+    cinematicState.invalidate();
+  }, [isMotionOn]);
 
   // Jump smoothly to a specific chapter (0 to 5)
   const jumpToChapter = useCallback(
@@ -33,21 +40,26 @@ export const LandingPage: React.FC = () => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       const targetScroll = (clampedIndex / 5) * maxScroll;
 
-      if (!isMotionOn) {
-        window.scrollTo(0, targetScroll);
+      const lenis = (window as any).__lenis;
+      if (lenis && isMotionOn) {
+        lenis.scrollTo(targetScroll, {
+          duration: 1.0,
+          easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        });
       } else {
-        // Use smooth scroll
         window.scrollTo({
           top: targetScroll,
-          behavior: 'smooth',
+          behavior: isMotionOn ? 'smooth' : 'auto',
         });
       }
+      currentChapterRef.current = clampedIndex;
+      cinematicState.setChapter(clampedIndex);
       setCurrentChapter(clampedIndex);
     },
     [isMotionOn]
   );
 
-  // Keyboard navigation between chapters
+  // Keyboard and GSAP Observer navigation between chapters
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Do not intercept if menu is open or active element is an input
@@ -57,23 +69,35 @@ export const LandingPage: React.FC = () => {
 
       if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey)) {
         e.preventDefault();
-        jumpToChapter(currentChapter + 1);
+        jumpToChapter(currentChapterRef.current + 1);
       } else if (e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && e.shiftKey)) {
         e.preventDefault();
-        jumpToChapter(currentChapter - 1);
+        jumpToChapter(currentChapterRef.current - 1);
       }
     };
 
+    // GSAP Observer with sensible tolerance to smoothly retarget
+    const obs = Observer.create({
+      target: window,
+      type: 'wheel,touch,pointer',
+      tolerance: 20,
+      preventDefault: false,
+    });
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      obs.kill();
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [currentChapter, jumpToChapter, isMenuOpen]);
 
-  // Pointer move tracking for 3D parallax
+  // Pointer move tracking (Zero React re-render, damped coordinates in cinematicState)
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
       const x = (e.clientX / window.innerWidth) * 2 - 1;
       const y = -(e.clientY / window.innerHeight) * 2 + 1;
-      setPointer({ x, y });
+      cinematicState.updatePointerTarget(x, y);
     };
 
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
@@ -84,11 +108,19 @@ export const LandingPage: React.FC = () => {
   useEffect(() => {
     if (!scrollTrackRef.current) return;
 
+    // Mobile touch normalization
+    const isTouch =
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    if (isTouch) {
+      ScrollTrigger.normalizeScroll(true);
+    }
+
     const trigger = ScrollTrigger.create({
       trigger: scrollTrackRef.current,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: isMotionOn ? 0.6 : 0,
+      scrub: isMotionOn ? 0.8 : 0,
       snap: isMotionOn
         ? {
             snapTo: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
@@ -98,32 +130,44 @@ export const LandingPage: React.FC = () => {
         : undefined,
       onUpdate: (self) => {
         const p = self.progress;
-        setScrollProgress(p);
+        cinematicState.targetScrollProgress = p;
         const activeIdx = Math.min(5, Math.max(0, Math.round(p * 5)));
-        setCurrentChapter(activeIdx);
+        if (activeIdx !== currentChapterRef.current) {
+          currentChapterRef.current = activeIdx;
+          cinematicState.setChapter(activeIdx);
+          setCurrentChapter(activeIdx);
+        }
       },
     });
+
+    // Single debounced ResizeObserver to refresh ScrollTrigger cleanly
+    let rAFId: number | null = null;
+    const ro = new ResizeObserver(() => {
+      if (rAFId) cancelAnimationFrame(rAFId);
+      rAFId = requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
+    });
+    ro.observe(document.documentElement);
 
     ScrollTrigger.refresh();
 
     return () => {
+      if (rAFId) cancelAnimationFrame(rAFId);
+      ro.disconnect();
       trigger.kill();
     };
   }, [isMotionOn]);
 
   return (
     <SmoothScrollProvider>
-      {/* 1. Numerical 0% -> 100% Loader with Split Shutter Reveal */}
+      {/* 1. Numerical 0% -> 100% Loader with Split Shutter Reveal & Warmup */}
       <CinematicLoader />
 
-      {/* 2. Fixed Full-Viewport Stage */}
-      <main className="fixed inset-0 w-full h-full overflow-hidden select-none bg-gradient-to-br from-[#050a1c] to-[#0a1f3d]">
+      {/* 2. Fixed Full-Viewport Stage (dvh for mobile chrome tolerance + contain: layout paint) */}
+      <main className="fixed inset-0 w-full h-[100dvh] overflow-hidden select-none bg-midnight-cyber contain-layout contain-paint">
         {/* 3D WebGL Monolith & Procedural Stations */}
-        <CinematicCanvas
-          scrollProgress={scrollProgress}
-          pointer={pointer}
-          isMotionOn={isMotionOn}
-        />
+        <CinematicCanvas />
 
         {/* HUD Inset Border with Chamfered Top-Right Corner */}
         <HudFrame />
@@ -166,7 +210,7 @@ export const LandingPage: React.FC = () => {
       {/* 3. 600vh Virtual Scroll Track (Enables smooth wheel & touch scrolling through 6 chapters) */}
       <div
         ref={scrollTrackRef}
-        className="relative w-full h-[600vh] pointer-events-none"
+        className="relative w-full h-[600vh] pointer-events-none touch-pan-y"
         aria-hidden="true"
       />
     </SmoothScrollProvider>

@@ -1,0 +1,45 @@
+NOTICE: Mortgage Underwriting Submission Package
+
+Attention Underwriters,
+
+Regarding applicant Siddharth Mukherjee - documents received: uid 3920 1847 5622 and
+pan card BKZPM7102G. mobile connection +91 9765432109 (alternative 6345098712),
+work email smukherjee@techfin-solutions.com. date of birth: 05-10-1985.
+residential premises: House No 42, Green Glen Layout, Outer Ring Road, Bellandur, Bengaluru 560103.
+
+Reported annual salary: INR 31,00,000 per salary slip, loan requirement: 55,00,000.
+direct salary account 401928374650, branch IFSC ICIC0000452. debit card for charges:
+4111 2222 3333 4448.
+
+partnership entity registered with GSTIN 24AAFCB9988D1ZQ. foreign passport Z9182736, voter card TUV5544332,
+driver permit DL04 20210055443.  Sister Neha Mukherjee acts as co-borrower, reach on 9122334455.
+
+clarification: customer toll-free 1860 500 8822 is general information, never redact. transaction ref 765432109876 and dispatch code 5544 3322 1100
+are delivery tracking tokens, consignment 9988 7766 5544 3322. convenience fee is INR 300. Note customer support is available during business hours,
+terms and conditions apply. billing reference INV-2026-331122 processed on 25-01-2026.
+
+--- underwriter field review notes ---
+Reviewer: Neeraj Kulkarni, staff badge EMP-44102, email neeraj.kulkarni@techfin-solutions.com
+Credit bureau score is 785. Monthly take-home salary, net pay 2,15,000 verified. contact 98200 54321 for queries.
+
+--- medical summary attached ---
+Patient: Sanjay Singhania, MRN 00812345, DOB 30/08/1971.
+Diagnosis: Ischemic heart disease post coronary angioplasty. Prescribed Clopidogrel 75 mg once daily.
+Medical insurance certificate MAX-BUPA-112233.
+
+--- infrastructure credentials ---
+admin: analytics database uri is mysql://dw_user:Sup3r$ecr3t!2026@192.168.10.50:3306/warehouse
+admin: bastion private key passphrase is C0mpl3x#P@ssw0rd99 , rotate weekly
+admin: storage key TEST_AWS_KEY_EXAMPLE_B secret TEST_AWS_SECRET_EXAMPLE_B
+admin: access token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NDMyMTA5ODc2Iiwicm9sZSI6InVzZXIifQ.3w_Up0wM7m2K1l0n9J8i7h6g5f4e3d2c1b0a9Z8y7x
+admin: incident webhook https://example.com/alerts/webhook/test_b
+
+--- हिंदी ऋण आवेदन (Housing Loan) ---
+उधारकर्ता: पूजा शर्मा, आधार संख्या 9012 3456 7894, मोबाइल 9711223344, वार्षिक आय ₹ 21,00,000।
+ग्राहकों की सूची संलग्न है।
+
+--- TRADE SECRET - strict NDA restricted ---
+Project Falcon (acquisition of QuickPay Gateway) price band INR 850-900 crore,
+strictly embargoed until shareholder vote. Internal customer list confidential.
+
+sincerely, mortgage division

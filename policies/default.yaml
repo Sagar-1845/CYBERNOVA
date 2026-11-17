@@ -1,0 +1,50 @@
+# Default DLP and Sensitive Data Policy
+name: default_dlp_policy
+version: 1.0.0
+
+destination_rules:
+  external:
+    block_types:
+      - AADHAAR
+      - CREDIT_CARD
+      - SECRET_KEY
+      - JWT_TOKEN
+      - PASSWORD
+    redact_types:
+      - PAN
+      - PHONE
+      - EMAIL
+      - PASSPORT
+      - VOTER_ID
+      - GSTIN
+      - BANK_ACCOUNT
+      - NAME
+      - ADDRESS
+  internal:
+    block_types:
+      - SECRET_KEY
+      - PASSWORD
+    redact_types:
+      - AADHAAR
+      - CREDIT_CARD
+
+sensitivity_classification:
+  confidential_types:
+    - AADHAAR
+    - CREDIT_CARD
+    - SECRET_KEY
+    - JWT_TOKEN
+    - PASSWORD
+  internal_types:
+    - PAN
+    - PHONE
+    - EMAIL
+    - PASSPORT
+    - VOTER_ID
+    - GSTIN
+    - BANK_ACCOUNT
+    - NAME
+    - ADDRESS
+  risk_thresholds:
+    confidential: 50.0
+    internal: 20.0

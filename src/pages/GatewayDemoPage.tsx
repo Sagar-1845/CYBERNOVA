@@ -33,24 +33,45 @@ import {
   executeCanary,
   getStoredMaskingPolicy,
   MaskingPolicy,
+  PII_PATTERNS,
 } from '@/lib/pipelineService';
 import { RiskHeatmap, HeatmapEntity } from '@/components/RiskHeatmap';
 import { MaskedTextDisplay } from '@/components/MaskedTextDisplay';
 import { DocumentUploadSection } from '@/components/DocumentUploadSection';
 import { PolicyControlSection } from '@/components/PolicyControlSection';
+import { IndicMultilingualLab } from '@/components/IndicMultilingualLab';
+import { Languages } from 'lucide-react';
 
 const PRESET_PROMPTS = [
   {
-    name: 'Banking KYC (Verhoeff Aadhaar + PAN)',
+    name: 'Banking KYC (Aadhaar + Valid PAN ABCPE1234F)',
     department: 'banking',
     prompt:
-      'Evaluate loan sanction for borrower Aarav Sharma (Aadhaar: 2345 6789 0124, PAN: ABCDE1234F). Phone: +91 9876543210. Gross annual income is INR 18,50,000.',
+      'Evaluate loan sanction for borrower Aarav Sharma (Aadhaar: 2345 6789 0124, PAN: ABCPE1234F). Phone: +91 9876543210. Gross annual income is INR 18,50,000.',
   },
   {
-    name: 'Healthcare Registration',
+    name: 'Kannada Identity (ಹೆಸರು + ಫೋನ್ + ಆಧಾರ್)',
+    department: 'default',
+    prompt:
+      'ನನ್ನ ಹೆಸರು ರಮೇಶ್ ಕುಮಾರ್. ನನ್ನ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ 9876543210 ಮತ್ತು ಆಧಾರ್ ಕಾರ್ಡ್ 3456 7890 1234. ದಯವಿಟ್ಟು ನನ್ನ ಖಾತೆಯ ಬಾಕಿಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
+  },
+  {
+    name: 'Hindi Healthcare (नाम + ईमेल + पैन)',
     department: 'healthcare',
     prompt:
-      'Schedule specialist consultation for patient Priya Venkatesh. Mobile: +91 9123456789, email: priya.v@example.com. Reason: routine cardiac telemetry review.',
+      'मेरा नाम अमित कुमार है। मेरा पैन कार्ड ABCPE1234F और ईमेल amit.kumar@gmail.com है। मुझे डॉक्टर परामर्श के लिए समय दें।',
+  },
+  {
+    name: 'Tamil Employment (பெயர் + தொலைபேசி)',
+    department: 'default',
+    prompt:
+      'என் பெயர் குமார் ராஜன். எனது தொலைபேசி எண் 9876543210 மற்றும் மின்னஞ்சல் kumar.rajan@gmail.com. கடன் ஒப்புதலை சரிபார்க்கவும்.',
+  },
+  {
+    name: 'Telugu Finance (పేరు + బ్యాంక్)',
+    department: 'default',
+    prompt:
+      'నా పేరు రవి కుమార్. నా ఫోన్ 9876543210 మరియు పాన్ కార్డ్ ABCPE1234F. దయచేసి ఖాతా సమాచారం ధృవీకరించండి.',
   },
   {
     name: 'Adversarial Injection Attack (Simulated)',
@@ -74,32 +95,61 @@ function extractEntities(
 ): { entities: { type: string; value: string }[]; mapping: Record<string, string> } {
   const mapping: Record<string, string> = {};
   const entities: { type: string; value: string }[] = [];
+  const foundSpans: { type: string; value: string; start: number; end: number }[] = [];
 
-  const patterns: { type: string; regex: RegExp; key: keyof MaskingPolicy }[] = [
-    { type: 'AADHAAR', regex: /\b\d{4}\s\d{4}\s\d{4}\b|\b\d{12}\b/g, key: 'maskAadhaar' },
-    { type: 'PAN', regex: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g, key: 'maskPan' },
-    { type: 'PHONE', regex: /(?:\+91[\s-]?)?[6-9]\d{9}\b/g, key: 'maskPhone' },
-    { type: 'EMAIL', regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, key: 'maskEmail' },
-    { type: 'GSTIN', regex: /\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}\b/g, key: 'maskGstin' },
-    { type: 'PASSPORT', regex: /\b[A-PR-WYa-pr-wy][1-9]\d\s?\d{4}[1-9]\b/g, key: 'maskPassport' },
-    { type: 'VOTER_ID', regex: /\b[A-Z]{3}[0-9]{7}\b/g, key: 'maskVoterId' },
-    {
-      type: 'NAME',
-      regex: /\b(?:Aarav Sharma|Priya Venkatesh|Ramesh Kumar|Anita Rao|Vikram Singh|Rajesh Patel)\b/g,
-      key: 'maskName',
-    },
-  ];
-
-  patterns.forEach(({ type, regex, key }) => {
-    // Only treat as masked entity if policy enables it (Name is unmasked by default)
+  PII_PATTERNS.forEach(({ type, regex, key, group }) => {
     if (policy[key] === false) return;
 
     let match;
     const re = new RegExp(regex.source, regex.flags);
     while ((match = re.exec(originalText)) !== null) {
-      entities.push({ type, value: match[0] });
+      const val = group && match[group] ? match[group] : match[0];
+      const start = group && match[group] ? match.index + match[0].indexOf(match[group]) : match.index;
+      foundSpans.push({ type, value: val, start, end: start + val.length });
     }
   });
+
+  // Dynamic cue-based PERSON extraction
+  if (policy.maskName !== false) {
+    const cueRegex = /(?:\b(?:borrower|applicant|customer|patient|account\s+holder|father['’]?s\s+name|name|mr\.?|mrs\.?|ms\.?|shri|smt\.?|dr\.?)\b|(?:उधारकर्ता|आवेदक|ग्राहक|मरीज़|मरीज|रोगी|नाम|खाता\s+धारक|पिता\s+का\s+नाम|श्री|श्रीमती|डॉक्टर|डाॅ\.?)(?=[\s:=-]|$))/gi;
+    let cm;
+    while ((cm = cueRegex.exec(originalText)) !== null) {
+      const cueEnd = cm.index + cm[0].length;
+      const rem = originalText.slice(cueEnd);
+      const sep = rem.match(/^[\s:=-]+/);
+      if (!sep) continue;
+      const afterSep = cueEnd + sep[0].length;
+      const sub = originalText.slice(afterSep);
+      const tokenRe = /([a-zA-Z\u0900-\u0963\u0970-\u097F]+)/g;
+      let tm;
+      const toks: { word: string; start: number; end: number }[] = [];
+      let lEnd = 0;
+      const STOP = new Set(['is','are','was','were','has','had','have','wants','wanted','apply','applies','applied','service','services','history','carefully','invoice','today','file','evaluate','contact','the','a','an','for','of','and','or','terms','conditions','details','record','records','help','data','support','loan','loans']);
+      while ((tm = tokenRe.exec(sub)) !== null) {
+        const inter = sub.slice(lEnd, tm.index);
+        if (toks.length > 0 && /[()[\]{},;.!?:\/\-]/.test(inter)) break;
+        if (STOP.has(tm[1].toLowerCase())) break;
+        toks.push({ word: tm[1], start: afterSep + tm.index, end: afterSep + tm.index + tm[1].length });
+        lEnd = tm.index + tm[1].length;
+        if (toks.length === 3) break;
+      }
+      if (toks.length > 0) {
+        const sIdx = toks[0].start;
+        const eIdx = toks[toks.length - 1].end;
+        foundSpans.push({ type: 'NAME', value: originalText.slice(sIdx, eIdx), start: sIdx, end: eIdx });
+      }
+    }
+  }
+
+  // Deduplicate overlapping spans
+  foundSpans.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+  let occEnd = -1;
+  for (const span of foundSpans) {
+    if (span.start >= occEnd) {
+      entities.push({ type: span.type, value: span.value });
+      occEnd = span.end;
+    }
+  }
 
   // Also parse placeholders from sanitizedText
   const placeholderRegex = /\[([A-Z_]+)_\d+\]/g;
@@ -117,7 +167,7 @@ function extractEntities(
 }
 
 export const GatewayDemoPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'gateway' | 'document' | 'policy'>('gateway');
+  const [activeTab, setActiveTab] = useState<'gateway' | 'multilingual' | 'document' | 'policy'>('gateway');
   const [policy, setPolicy] = useState<MaskingPolicy>(getStoredMaskingPolicy());
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [promptText, setPromptText] = useState(PRESET_PROMPTS[0].prompt);
@@ -303,6 +353,23 @@ export const GatewayDemoPage: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => setActiveTab('multilingual')}
+            className={cn(
+              'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer',
+              activeTab === 'multilingual'
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-950'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            )}
+          >
+            <Languages className="w-4 h-4" />
+            <span>Indic & Multilingual Lab</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-400/20 text-purple-300 font-mono">
+              INDIC
+            </span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('document')}
             className={cn(
               'flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer',
@@ -335,6 +402,9 @@ export const GatewayDemoPage: React.FC = () => {
             </span>
           </button>
         </div>
+
+                {/* ── TAB: INDIC & MULTILINGUAL LAB ─────────────────────────────── */}
+        {activeTab === 'multilingual' && <IndicMultilingualLab />}
 
         {/* ── TAB 2: DOCUMENT PRIVACY SCANNER ─────────────────────────────────── */}
         {activeTab === 'document' && (
@@ -505,6 +575,7 @@ export const GatewayDemoPage: React.FC = () => {
                 restoredText={processResult.restored_response}
                 entityMapping={entityMapping}
                 detectedPlaceholders={detectedEntities.map((e) => e.value)}
+                verificationStatus={processResult.verification_status || 'NOT EXECUTED'}
               />
             )}
 

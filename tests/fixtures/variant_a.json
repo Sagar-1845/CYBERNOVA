@@ -1,0 +1,386 @@
+{
+  "document": "variant_a.txt",
+  "tier_1_entities": [
+    {
+      "type": "PERSON",
+      "value": "Ananya Deshpande",
+      "tier": "T1",
+      "start": 115,
+      "end": 131
+    },
+    {
+      "type": "AADHAAR",
+      "value": "5632 8491 7207",
+      "tier": "T1",
+      "start": 157,
+      "end": 171
+    },
+    {
+      "type": "PAN",
+      "value": "AFZPD3921E",
+      "tier": "T1",
+      "start": 180,
+      "end": 190
+    },
+    {
+      "type": "PHONE",
+      "value": "+91 9123456780",
+      "tier": "T1",
+      "start": 224,
+      "end": 238
+    },
+    {
+      "type": "PHONE",
+      "value": "8234567891",
+      "tier": "T1",
+      "start": 244,
+      "end": 254
+    },
+    {
+      "type": "EMAIL",
+      "value": "ananya.deshpande@corpmail.org",
+      "tier": "T1",
+      "start": 263,
+      "end": 292
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "INR 24,50,000",
+      "tier": "T1",
+      "start": 456,
+      "end": 469
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "42,00,000",
+      "tier": "T1",
+      "start": 513,
+      "end": 522
+    },
+    {
+      "type": "BANK_ACCOUNT",
+      "value": "603200984123",
+      "tier": "T1",
+      "start": 546,
+      "end": 558
+    },
+    {
+      "type": "IFSC",
+      "value": "HDFC0001234",
+      "tier": "T1",
+      "start": 565,
+      "end": 576
+    },
+    {
+      "type": "CREDIT_CARD",
+      "value": "5241 8930 4726 1546",
+      "tier": "T1",
+      "start": 609,
+      "end": 628
+    },
+    {
+      "type": "GSTIN",
+      "value": "27AAAPL1234C1ZV",
+      "tier": "T1",
+      "start": 676,
+      "end": 691
+    },
+    {
+      "type": "PASSPORT",
+      "value": "J8392014",
+      "tier": "T1",
+      "start": 702,
+      "end": 710
+    },
+    {
+      "type": "VOTER_ID",
+      "value": "WXY9182734",
+      "tier": "T1",
+      "start": 721,
+      "end": 731
+    },
+    {
+      "type": "PHONE",
+      "value": "9822019822",
+      "tier": "T1",
+      "start": 826,
+      "end": 836
+    },
+    {
+      "type": "EMAIL",
+      "value": "vikram.rathore@corpmail.org",
+      "tier": "T1",
+      "start": 1282,
+      "end": 1309
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "1,85,000",
+      "tier": "T1",
+      "start": 1365,
+      "end": 1373
+    },
+    {
+      "type": "PERSON",
+      "value": "Deepak Chawla",
+      "tier": "T1",
+      "start": 1479,
+      "end": 1492
+    },
+    {
+      "type": "PERSON",
+      "value": "विक्रम मल्होत्रा",
+      "tier": "T1",
+      "start": 2281,
+      "end": 2297
+    },
+    {
+      "type": "AADHAAR",
+      "value": "6789 0123 4567",
+      "tier": "T1",
+      "start": 2311,
+      "end": 2325
+    },
+    {
+      "type": "PHONE",
+      "value": "9822334455",
+      "tier": "T1",
+      "start": 2334,
+      "end": 2344
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "₹ 18,50,000",
+      "tier": "T1",
+      "start": 2357,
+      "end": 2368
+    }
+  ],
+  "tier_2_entities": [
+    {
+      "type": "DATE_OF_BIRTH",
+      "value": "22/07/1991",
+      "tier": "T2",
+      "start": 301,
+      "end": 311
+    },
+    {
+      "type": "ADDRESS",
+      "value": "Apartment 5B, Palm Meadows, 4th Main, Koramangala, Bengaluru 560034",
+      "tier": "T2",
+      "start": 332,
+      "end": 399
+    },
+    {
+      "type": "DRIVING_LICENSE",
+      "value": "MH02 20190098765",
+      "tier": "T2",
+      "start": 749,
+      "end": 765
+    },
+    {
+      "type": "PERSON",
+      "value": "Rajesh Subramanian",
+      "tier": "T2",
+      "start": 780,
+      "end": 798
+    },
+    {
+      "type": "PERSON",
+      "value": "Vikram Rathore",
+      "tier": "T2",
+      "start": 1237,
+      "end": 1251
+    },
+    {
+      "type": "EMPLOYEE_ID",
+      "value": "EMP-90412",
+      "tier": "T2",
+      "start": 1265,
+      "end": 1274
+    },
+    {
+      "type": "PHONE",
+      "value": "98190 12345",
+      "tier": "T2",
+      "start": 1398,
+      "end": 1409
+    },
+    {
+      "type": "MEDICAL_RECORD_NUMBER",
+      "value": "00981245",
+      "tier": "T2",
+      "start": 1498,
+      "end": 1506
+    },
+    {
+      "type": "DATE_OF_BIRTH",
+      "value": "19/05/1982",
+      "tier": "T2",
+      "start": 1512,
+      "end": 1522
+    },
+    {
+      "type": "DIAGNOSIS",
+      "value": "Chronic hypertension with mild left ventricular hypertrophy",
+      "tier": "T2",
+      "start": 1535,
+      "end": 1594
+    },
+    {
+      "type": "PRESCRIPTION",
+      "value": "Amlodipine 5 mg once daily",
+      "tier": "T2",
+      "start": 1607,
+      "end": 1633
+    },
+    {
+      "type": "INSURANCE_POLICY",
+      "value": "HDFC-ERGO-994102",
+      "tier": "T2",
+      "start": 1656,
+      "end": 1672
+    },
+    {
+      "type": "SECRET",
+      "value": "postgresql://fin_admin:P@ssw0rd#2026!@172.16.8.20:5432/core_banking",
+      "tier": "T2",
+      "subtype": "DATABASE_URI",
+      "start": 1744,
+      "end": 1811
+    },
+    {
+      "type": "SECRET",
+      "value": "Tr0ub4dor&9921",
+      "tier": "T2",
+      "subtype": "PASSWORD",
+      "start": 1849,
+      "end": 1863
+    },
+    {
+      "type": "SECRET",
+      "value": "TEST_AWS_KEY_EXAMPLE_A",
+      "tier": "T2",
+      "subtype": "AWS_KEY",
+      "start": 1914,
+      "end": 1935
+    },
+    {
+      "type": "SECRET",
+      "value": "TEST_AWS_SECRET_EXAMPLE_A",
+      "tier": "T2",
+      "subtype": "AWS_SECRET",
+      "start": 1943,
+      "end": 1966
+    },
+    {
+      "type": "SECRET",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5ODc2NTQzMjEwIiwidXNlciI6IkFuYW55YSJ9.7x_Vp1xN8n3L2m1o0K9j8h7g6f5e4d3c2b1a0Z9y8x",
+      "tier": "T2",
+      "subtype": "JWT",
+      "start": 2005,
+      "end": 2133
+    },
+    {
+      "type": "SECRET",
+      "value": "https://example.com/alerts/webhook/test_a",
+      "tier": "T2",
+      "subtype": "WEBHOOK_URL",
+      "start": 2159,
+      "end": 2236
+    },
+    {
+      "type": "DOCUMENT_LABEL",
+      "value": "CONFIDENTIAL - internal audit only",
+      "tier": "T2",
+      "start": 2403,
+      "end": 2437
+    },
+    {
+      "type": "BUSINESS_CONFIDENTIAL",
+      "value": "Project Hawk",
+      "tier": "T2",
+      "start": 2442,
+      "end": 2454
+    },
+    {
+      "type": "BUSINESS_CONFIDENTIAL",
+      "value": "acquisition of RetailHub India",
+      "tier": "T2",
+      "start": 2456,
+      "end": 2486
+    }
+  ],
+  "must_not_flag_traps": [
+    {
+      "type": "HELPLINE_PUBLIC",
+      "value": "1800 209 4300",
+      "reason": "Toll-free public helpline",
+      "start": 866,
+      "end": 879
+    },
+    {
+      "type": "ORDER_REF",
+      "value": "987654321098",
+      "reason": "Internal order reference",
+      "start": 934,
+      "end": 946
+    },
+    {
+      "type": "TICKET_REF",
+      "value": "1029 3847 5610",
+      "reason": "Internal ticket reference",
+      "start": 958,
+      "end": 972
+    },
+    {
+      "type": "TRACKING_NO",
+      "value": "4321 8765 2109 8765",
+      "reason": "Tracking number",
+      "start": 1010,
+      "end": 1029
+    },
+    {
+      "type": "GENERAL_AMOUNT",
+      "value": "INR 750",
+      "reason": "Processing fee without income cue",
+      "start": 1049,
+      "end": 1056
+    },
+    {
+      "type": "COMMON_PHRASE",
+      "value": "customer support is available",
+      "reason": "Dictionary phrase",
+      "start": 1062,
+      "end": 1091
+    },
+    {
+      "type": "LEGAL_PHRASE",
+      "value": "terms and conditions apply",
+      "reason": "Standard boilerplate",
+      "start": 1109,
+      "end": 1135
+    },
+    {
+      "type": "INVOICE_NUM",
+      "value": "INV-2026-992014",
+      "reason": "Invoice number",
+      "start": 1145,
+      "end": 1160
+    },
+    {
+      "type": "INVOICE_DATE",
+      "value": "18/04/2026",
+      "reason": "Invoice settlement date",
+      "start": 1176,
+      "end": 1186
+    },
+    {
+      "type": "HINDI_PHRASE",
+      "value": "ग्राहकों की सूची संलग्न है",
+      "reason": "General Hindi phrase",
+      "start": 2370,
+      "end": 2396
+    }
+  ]
+}

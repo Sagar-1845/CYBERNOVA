@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, AlertTriangle, Flame, Info, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { RISK_BANDS, getRiskBand } from '@/lib/pipelineService';
 
 export interface HeatmapEntity {
   type: string;
@@ -27,9 +28,11 @@ const PII_WEIGHTS: Record<string, number> = {
   GSTIN: 0.75,
   PASSPORT: 0.85,
   VOTER_ID: 0.7,
+  FINANCIAL: 0.65,
   PHONE: 0.5,
   EMAIL: 0.45,
   NAME: 0.35,
+  PERSON: 0.35,
 };
 
 export const RiskHeatmap: React.FC<RiskHeatmapProps> = ({
@@ -186,18 +189,16 @@ export const RiskHeatmap: React.FC<RiskHeatmapProps> = ({
         <div className="flex items-center gap-2 text-xs font-mono">
           <span className="text-muted-foreground">Composite Intensity:</span>
           <Badge
-            variant={
-              riskScore > 60 ? 'destructive' : riskScore > 30 ? 'saffron' : 'green'
-            }
+            variant={getRiskBand(riskScore, detectedEntities.length).badgeVariant}
             className="font-bold text-xs"
           >
-            {riskScore.toFixed(1)} / 100 ({severity})
+            {riskScore.toFixed(1)} / 100 ({getRiskBand(riskScore, detectedEntities.length).label.split(' ')[1] || severity})
           </Badge>
         </div>
       </div>
 
       {/* Interactive Heatmap Container */}
-      <div className="p-4 rounded-xl bg-background/90 border border-border/80 font-mono text-xs sm:text-sm leading-relaxed min-h-[90px] select-text">
+      <div className="p-4 rounded-xl bg-background/90 border border-border/80 font-mono text-xs sm:text-sm leading-relaxed min-h-[90px] select-text text-left">
         {tokens.map((token, i) => {
           if (!token.isHighlighted) {
             return (
@@ -268,26 +269,12 @@ export const RiskHeatmap: React.FC<RiskHeatmapProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] font-mono text-muted-foreground border-t border-border/40">
         <span className="font-semibold text-foreground/80">Heat Spectrum:</span>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-emerald-500/60" />
-            <span>0-10% Safe</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-cyan-500/70" />
-            <span>10-35% Low</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-amber-500/80" />
-            <span>35-65% Medium</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-orange-500/90" />
-            <span>65-85% High</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-red-600 shadow-[0_0_6px_red]" />
-            <span>85-100% Critical / Leak</span>
-          </div>
+          {RISK_BANDS.map((band) => (
+            <div key={band.label} className="flex items-center gap-1">
+              <span className={cn('w-2.5 h-2.5 rounded', band.color)} />
+              <span>{band.label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

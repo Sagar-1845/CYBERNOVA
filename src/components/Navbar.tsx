@@ -11,8 +11,9 @@ import {
   FileCheck2,
   BarChart3,
   Database,
-  Terminal,
   FileText,
+  Scale,
+  Scissors,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +26,9 @@ interface NavbarProps {
 
 const NAV_LINKS = [
   { name: 'Gateway Demo', path: '/demo', icon: Play },
+  { name: 'DPDP Consent & Rights', path: '/consent', icon: Scale },
   { name: 'Document Intelligence', path: '/documents', icon: FileText },
+  { name: 'Scan & Redact', path: '/scan-redact', icon: Scissors },
   { name: 'Audit Log', path: '/audit', icon: FileCheck2 },
   { name: 'Metrics', path: '/metrics', icon: BarChart3 },
   { name: 'Dataset', path: '/dataset', icon: Database },
@@ -34,6 +37,7 @@ const NAV_LINKS = [
 export const Navbar: React.FC<NavbarProps> = ({ theme, onToggleTheme }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -49,6 +53,25 @@ export const Navbar: React.FC<NavbarProps> = ({ theme, onToggleTheme }) => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Check live backend connection status
+  useEffect(() => {
+    const checkBackend = async () => {
+      try {
+        const res = await fetch('/health');
+        if (res.ok) {
+          setBackendOnline(true);
+        } else {
+          setBackendOnline(false);
+        }
+      } catch {
+        setBackendOnline(false);
+      }
+    };
+    checkBackend();
+    const interval = setInterval(checkBackend, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header
       className={cn(
@@ -62,26 +85,26 @@ export const Navbar: React.FC<NavbarProps> = ({ theme, onToggleTheme }) => {
         {/* Brand Logo */}
         <Link
           to="/"
-          className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon rounded-xl p-1"
-          aria-label="ZeroLeak AI Home"
+          className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-xl p-1"
+          aria-label="ZEROLEAK AI Home"
         >
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-card border border-border shadow-md transition-transform group-hover:scale-105">
             {/* Tricolor Accent Notch */}
             <div className="absolute -top-[1px] left-2 right-2 h-[2px] flex rounded-full overflow-hidden">
-              <span className="flex-1 bg-saffron" />
+              <span className="flex-1 bg-amber-500" />
               <span className="flex-1 bg-white/70" />
-              <span className="flex-1 bg-indiaGreen" />
+              <span className="flex-1 bg-emerald-500" />
             </div>
-            <Shield className="w-5 h-5 text-saffron transition-colors group-hover:text-neon" />
-            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-neon shadow-neon-glow" />
+            <Shield className="w-5 h-5 text-cyan-400 transition-colors group-hover:text-amber-400" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-cyan-400 shadow-sm" />
           </div>
 
           <div className="flex flex-col">
             <span className="font-extrabold text-base sm:text-lg tracking-tight text-foreground leading-none">
-              ZERO<span className="text-neon">LEAK</span> <span className="text-xs text-saffron font-bold">AI</span>
+              ZERO<span className="text-cyan-400">LEAK</span> <span className="text-xs text-amber-400 font-bold">AI</span>
             </span>
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-              Privacy Gateway
+              Privacy Firewall & DPDP
             </span>
           </div>
         </Link>
@@ -93,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({ theme, onToggleTheme }) => {
             end
             className={({ isActive }) =>
               cn(
-                'px-3.5 py-1.5 rounded-full text-xs font-mono font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon',
+                'px-3 py-1.5 rounded-full text-xs font-mono font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400',
                 isActive
                   ? 'bg-secondary text-foreground font-semibold shadow-sm border border-border'
                   : 'text-muted-foreground hover:text-foreground'
@@ -111,14 +134,14 @@ export const Navbar: React.FC<NavbarProps> = ({ theme, onToggleTheme }) => {
                 to={link.path}
                 className={({ isActive }) =>
                   cn(
-                    'px-3.5 py-1.5 rounded-full text-xs font-mono font-medium transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon',
+                    'px-3 py-1.5 rounded-full text-xs font-mono font-medium transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400',
                     isActive
                       ? 'bg-secondary text-foreground font-semibold shadow-sm border border-border'
                       : 'text-muted-foreground hover:text-foreground'
                   )
                 }
               >
-                <Icon className="w-3.5 h-3.5 text-saffron" />
+                <Icon className="w-3.5 h-3.5 text-cyan-400" />
                 <span>{link.name}</span>
               </NavLink>
             );
@@ -127,73 +150,66 @@ export const Navbar: React.FC<NavbarProps> = ({ theme, onToggleTheme }) => {
 
         {/* Right Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Quick Enclave Status Indicator (Desktop) */}
+          {/* Live Backend Connection Status Indicator */}
           <div className="hidden xl:flex items-center gap-2 text-xs font-mono text-muted-foreground bg-card/60 border border-border/70 px-3 py-1.5 rounded-full">
-            <span className="w-2 h-2 rounded-full bg-indiaGreen animate-pulse" />
-            <span className="text-[11px] text-foreground/80 font-medium">DPDP Gateway Online</span>
+            {backendOnline ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[11px] text-emerald-400 font-medium">FastAPI :8000 Live</span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                <span className="text-[11px] text-foreground/80 font-medium">Sovereign Enclave Active</span>
+              </>
+            )}
           </div>
 
-          {/* Theme Switcher Button - minimum 44x44px touch target */}
+          {/* Theme Switcher Button */}
           <Button
             variant="outline"
             size="icon"
             onClick={onToggleTheme}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className="rounded-xl border-border/80 min-h-[44px] min-w-[44px] h-11 w-11 text-foreground hover:text-saffron transition-all focus-visible:ring-2 focus-visible:ring-neon"
+            className="rounded-xl border-border/80 min-h-[44px] min-w-[44px] h-11 w-11 text-foreground hover:text-cyan-400 transition-all focus-visible:ring-2 focus-visible:ring-cyan-400"
           >
             {theme === 'dark' ? (
-              <Sun className="h-4 w-4 text-saffron transition-transform hover:rotate-45" />
+              <Sun className="h-4 w-4 text-amber-400 transition-transform hover:rotate-45" />
             ) : (
               <Moon className="h-4 w-4 text-slate-700 transition-transform hover:-rotate-12" />
             )}
           </Button>
 
-          {/* Primary CTA (Desktop) */}
-          <Link to="/demo" className="hidden sm:inline-block">
-            <Button
-              variant="saffron"
-              size="sm"
-              className="font-mono text-xs font-bold gap-1.5 h-11 px-4 rounded-xl shadow-saffron-glow focus-visible:ring-2 focus-visible:ring-neon"
-            >
-              <Terminal className="w-3.5 h-3.5" />
-              <span>Launch Demo</span>
-            </Button>
-          </Link>
-
-          {/* Mobile Hamburger Button - minimum 44x44px touch target */}
-          <button
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            aria-label="Toggle navigation menu"
+          {/* Mobile Menu Toggle Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-expanded={mobileMenuOpen}
-            className="lg:hidden flex items-center justify-center min-h-[44px] min-w-[44px] h-11 w-11 rounded-xl border border-border/80 bg-card/80 text-foreground hover:text-saffron focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            className="lg:hidden rounded-xl min-h-[44px] min-w-[44px] h-11 w-11 text-foreground focus-visible:ring-2 focus-visible:ring-cyan-400"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
       </div>
 
-      {/* Mobile Drawer Menu (Responsive for 360px) */}
+      {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-border bg-card/98 backdrop-blur-2xl px-4 py-5 space-y-2 shadow-2xl animate-in slide-in-from-top-3 duration-200">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground px-2 pb-1">
-            Navigation Menu
-          </div>
-
+        <div className="lg:hidden border-b border-border bg-background/98 backdrop-blur-xl px-4 pt-3 pb-6 space-y-2 animate-in slide-in-from-top duration-200">
           <NavLink
             to="/"
             end
-            onClick={() => setMobileMenuOpen(false)}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-mono font-medium transition-colors min-h-[48px]',
+                'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-mono transition-colors min-h-[44px]',
                 isActive
-                  ? 'bg-secondary text-foreground font-bold border border-border'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+                  ? 'bg-secondary text-foreground font-semibold border border-border'
+                  : 'text-muted-foreground hover:text-foreground'
               )
             }
           >
-            <Shield className="w-4 h-4 text-saffron" />
-            <span>Overview & Landing</span>
+            Overview
           </NavLink>
 
           {NAV_LINKS.map((link) => {
@@ -202,39 +218,23 @@ export const Navbar: React.FC<NavbarProps> = ({ theme, onToggleTheme }) => {
               <NavLink
                 key={link.path}
                 to={link.path}
-                onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-mono font-medium transition-colors min-h-[48px]',
+                    'flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-mono transition-colors min-h-[44px]',
                     isActive
-                      ? 'bg-secondary text-foreground font-bold border border-border'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+                      ? 'bg-secondary text-foreground font-semibold border border-border'
+                      : 'text-muted-foreground hover:text-foreground'
                   )
                 }
               >
-                <Icon className="w-4 h-4 text-neon" />
+                <Icon className="w-4 h-4 text-cyan-400" />
                 <span>{link.name}</span>
               </NavLink>
             );
           })}
-
-          <div className="pt-3 border-t border-border/60">
-            <Link
-              to="/demo"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full block"
-            >
-              <Button
-                variant="saffron"
-                className="w-full min-h-[48px] font-mono text-sm font-bold gap-2 rounded-xl shadow-saffron-glow"
-              >
-                <Terminal className="w-4 h-4" />
-                <span>Open Gateway Live Demo</span>
-              </Button>
-            </Link>
-          </div>
         </div>
       )}
     </header>
   );
 };
+export default Navbar;

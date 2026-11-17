@@ -13,60 +13,103 @@ export const CinematicLoader: React.FC<CinematicLoaderProps> = ({ onComplete }) 
   const topShutterRef = useRef<HTMLDivElement>(null);
   const bottomShutterRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef(0);
 
   useEffect(() => {
-    let current = 0;
-    const interval = setInterval(() => {
-      // Accelerate towards 100%
-      const step = Math.max(1, Math.floor((100 - current) * 0.15) + Math.floor(Math.random() * 5));
-      current = Math.min(100, current + step);
-      setProgress(current);
+    let isCancelled = false;
+    let intervalId: any = null;
 
-      if (current >= 100) {
-        clearInterval(interval);
-        setStatusText('Ready to explore');
-
-        // Shutter reveal animation
-        setTimeout(() => {
-          const tl = gsap.timeline({
-            onComplete: () => {
-              setIsDone(true);
-              onComplete?.();
-            },
-          });
-
-          // Fade out counter content
-          tl.to(contentRef.current, {
-            opacity: 0,
-            duration: 0.3,
-            ease: 'power2.in',
-          });
-
-          // Split shutter reveal
-          tl.to(
-            topShutterRef.current,
-            {
-              yPercent: -100,
-              duration: 0.75,
-              ease: 'power3.inOut',
-            },
-            '+=0.1'
-          );
-
-          tl.to(
-            bottomShutterRef.current,
-            {
-              yPercent: 100,
-              duration: 0.75,
-              ease: 'power3.inOut',
-            },
-            '<'
-          );
-        }, 300);
+    // Smooth ticker for visual progress counter
+    intervalId = setInterval(() => {
+      if (progressRef.current < 90) {
+        progressRef.current = Math.min(90, progressRef.current + Math.floor(Math.random() * 8) + 4);
+        setProgress(progressRef.current);
       }
     }, 40);
 
-    return () => clearInterval(interval);
+    // Warm-up pipeline: fonts ready, images decode, 3 rAF frames rendered
+    const warmup = async () => {
+      try {
+        if (typeof document !== 'undefined' && 'fonts' in document) {
+          await document.fonts.ready;
+        }
+
+        if (typeof document !== 'undefined') {
+          const imgs = Array.from(document.querySelectorAll('img'));
+          await Promise.all(imgs.map((img) => img.decode().catch(() => {})));
+        }
+
+        // Wait for 3 rAF cycles so WebGL canvas compiles shaders and uploads textures
+        await new Promise<void>((resolve) => {
+          let frames = 0;
+          const tick = () => {
+            frames++;
+            if (frames >= 3) {
+              resolve();
+            } else {
+              requestAnimationFrame(tick);
+            }
+          };
+          requestAnimationFrame(tick);
+        });
+      } catch (e) {
+        // Fallback gracefully on warm-up error
+      }
+
+      if (isCancelled) return;
+      clearInterval(intervalId);
+
+      // Fast-forward to 100%
+      progressRef.current = 100;
+      setProgress(100);
+      setStatusText('Ready to explore');
+
+      // Shutter reveal animation with power3.inOut over 0.6s
+      setTimeout(() => {
+        if (isCancelled) return;
+        const tl = gsap.timeline({
+          onComplete: () => {
+            setIsDone(true);
+            onComplete?.();
+          },
+        });
+
+        // Fade out counter content
+        tl.to(contentRef.current, {
+          opacity: 0,
+          duration: 0.25,
+          ease: 'power2.in',
+        });
+
+        // Split shutter reveal with power3.inOut
+        tl.to(
+          topShutterRef.current,
+          {
+            yPercent: -100,
+            duration: 0.6,
+            ease: 'power3.inOut',
+          },
+          '+=0.05'
+        );
+
+        tl.to(
+          bottomShutterRef.current,
+          {
+            yPercent: 100,
+            duration: 0.6,
+            ease: 'power3.inOut',
+          },
+          '<'
+        );
+      }, 150);
+    };
+
+    warmup();
+
+    return () => {
+      isCancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [onComplete]);
 
   if (isDone) return null;
@@ -76,13 +119,13 @@ export const CinematicLoader: React.FC<CinematicLoaderProps> = ({ onComplete }) 
       {/* Top Shutter */}
       <div
         ref={topShutterRef}
-        className="absolute top-0 left-0 right-0 h-1/2 bg-[#050a1c] border-b border-[#37d3fc]/20 z-10"
+        className="absolute top-0 left-0 right-0 h-1/2 bg-[#020108] border-b border-[#37d3fc]/20 z-10"
       />
 
       {/* Bottom Shutter */}
       <div
         ref={bottomShutterRef}
-        className="absolute bottom-0 left-0 right-0 h-1/2 bg-[#050a1c] border-t border-[#37d3fc]/20 z-10"
+        className="absolute bottom-0 left-0 right-0 h-1/2 bg-[#020108] border-t border-[#37d3fc]/20 z-10"
       />
 
       {/* Center Counter & Status */}

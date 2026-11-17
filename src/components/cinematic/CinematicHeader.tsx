@@ -22,7 +22,7 @@ export const CinematicHeader: React.FC<CinematicHeaderProps> = ({
           viewBox="0 0 268 32"
           className="w-40 sm:w-48 md:w-56 h-auto text-[#d5ddfd] group-hover:text-white transition-colors"
         >
-          {/* ZEROLEAK (Blocky Stencil) */}
+          {/* PRIVAGUARD (Blocky Stencil) */}
           <g fill="currentColor">
             {/* Z */}
             <path d="M 0 0 H 24 V 6 L 8 26 H 24 V 32 H 0 V 26 L 16 6 H 0 Z" />
@@ -61,6 +61,12 @@ export const CinematicHeader: React.FC<CinematicHeaderProps> = ({
           >
             HOW IT WORKS
           </button>
+          <Link
+            to="/scan-redact"
+            className="text-[#37d3fc] hover:text-white transition-colors cursor-pointer font-bold drop-shadow-[0_0_8px_rgba(55,211,252,0.4)]"
+          >
+            SCAN & REDACT
+          </Link>
           <Link
             to="/demo"
             className="hover:text-white transition-colors cursor-pointer"

@@ -1,0 +1,45 @@
+FWD: Re: Re: loan file - urgent, pls check before EOD   (sent from my phone, sorry for typos)
+
+hi team,
+
+following up on yesterdays call. the borrower is Meenakshi Iyer - she sent her aadhaar 4821 7396 5010 and
+PAN BQRPI4827K on whatsapp last night. her mobile is +91 9845012367 (alt 7654321098),
+email meenakshi.iyer@example.com. dob is 14/03/1989 btw.
+she stays at Flat 304, Lakeview Residency, 12th Cross, Indiranagar, Bengaluru 560038 - verify with the utility bill.
+
+Gross annual income is INR 18,50,000 per Form 16, and she is asking for a loan amount of 35,00,000.
+salary account number 502100387465, IFSC ZLBK0004521. card on file for the processing fee:
+4539 1488 0343 6467.
+
+her husband runs a small trading firm, GSTIN 29CKLPD9031T1ZA. passport M2468135, voter id KRL4839201,
+driving licence KA05 20180012345.  Her cousin Sunil Narayanan is guarantor, reachable on 9845098450.
+
+btw the bank helpline 1800 425 3800 is public, dont mask that. also order ref 123456789012 and ticket 8765 4321 0987
+are just internal reference numbers, tracking no 1234 5678 9012 3456. fee for a statement is INR 500. Our customer support is available 9am-6pm,
+terms and conditions apply. invoice INV-2026-004512 was cleared on 12/03/2026.
+
+--- loan officer notes (scanned, typed out) ---
+Officer: Rohan Deshmukh, employee id EMP-20457, email rohan.deshmukh@example.com
+Her CIBIL looks ok. Salary credited monthly, net pay 1,42,500 approx. Need to check last 6 months. call me on 98765 43210 if unsure.
+
+--- medical referral pasted in by mistake ---
+Patient: Karthik Raman, MRN 00458213, DOB 02/11/1975.
+Diagnosis: Type 2 diabetes mellitus with early nephropathy. Prescribed Metformin 500 mg twice daily.
+Insurance policy no. STAR-HI-77120394.
+
+--- devops chat (pasted from slack) ---
+devbot: prod db conn string is postgresql://svc_loans:Xk9#mP2$vL7q@10.20.4.15:5432/loans_prod
+devbot: the production server password is Bl4ckF!sh#2026 , rotate after the audit pls
+devbot: aws key TEST_AWS_KEY_EXAMPLE_0 secret TEST_AWS_SECRET_EXAMPLE_0
+devbot: token for the gateway: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+devbot: webhook https://example.com/alerts/webhook/test_0
+
+--- Hindi application (हिंदी) ---
+उधारकर्ता: सरिता वर्मा, आधार संख्या 3456 7890 1238, मोबाइल 9811122233, वार्षिक आय ₹ 12,00,000।
+ग्राहकों की सूची संलग्न है।
+
+--- CONFIDENTIAL - board only, do not forward ---
+Project Kestrel (acquisition of ZenCart Logistics) price band INR 420-460 crore,
+not public until 30 Nov. Customer database must not be shared externally.
+
+regards, sent from my phone

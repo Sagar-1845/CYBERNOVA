@@ -27,9 +27,11 @@ PII_SENSITIVITY_WEIGHTS: Mapping[str, float] = {
     PIIType.AADHAAR.value: 35.0,
     PIIType.PAN.value: 30.0,
     PIIType.GSTIN.value: 25.0,
+    PIIType.FINANCIAL.value: 20.0,
     PIIType.PHONE.value: 15.0,
     PIIType.EMAIL.value: 15.0,
-    PIIType.NAME.value: 10.0,
+    PIIType.NAME.value: 12.0,
+    PIIType.PERSON.value: 12.0,
     PIIType.UNKNOWN.value: 10.0,
 }
 
@@ -179,14 +181,15 @@ def calculate_risk_score(
     # Soft ceiling mapping to keep bounded in 0 - 100
     composite_score = round(min(100.0, max(0.0, total_raw)), 2)
 
-    # Assign overall severity level
-    if composite_score >= 80.0:
+    # Assign overall severity level matching unified RISK_BANDS
+    # (0-10 Safe [0 entities], 11-35 Low, 36-60 Medium, 61-84 High, 85-100 Critical)
+    if composite_score >= 85.0:
         overall_severity = SeverityLevel.CRITICAL
         recommended_action = Action.BLOCK
-    elif composite_score >= 55.0:
+    elif composite_score >= 61.0:
         overall_severity = SeverityLevel.HIGH
         recommended_action = Action.BLOCK if injection_result and injection_result.is_flagged else Action.WARN
-    elif composite_score >= 25.0:
+    elif composite_score >= 36.0:
         overall_severity = SeverityLevel.MEDIUM
         recommended_action = Action.WARN
     else:

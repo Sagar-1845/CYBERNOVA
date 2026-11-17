@@ -18,6 +18,8 @@ const badgeVariants = cva(
           'border-saffron/40 bg-saffron/10 text-saffron-500 shadow-sm',
         green:
           'border-indiaGreen/40 bg-indiaGreen/10 text-indiaGreen-500 shadow-sm',
+        cyan:
+          'border-[#37d3fc]/40 bg-[#37d3fc]/10 text-[#37d3fc] shadow-sm',
         neon:
           'border-neon/50 bg-neon/10 text-neon shadow-neon-glow font-mono tracking-wider',
         token:

@@ -1,9 +1,29 @@
 /**
  * src/lib/document/extractors.ts
  * ──────────────────────────────
- * Real, client-side, multi-format document extraction engine for Phase 2.
+ * Unified multi-format document extraction engine for ZeroLeak AI.
  * Extracts paragraphs, headings, tables, metadata, spreadsheet cells,
  * JSON/XML structures, and image text via OCR into a unified DocumentNode structure.
+ *
+ * ── Offsets & Character Encoding Specification ──────────────────────────────
+ * 1. Offsets (start, end) are 0-based absolute slice boundaries into rawText.
+ * 2. Invariant: For EVERY extracted node across ALL formats (TXT, CSV, JSON, XML,
+ *    DOCX, PDF, OCR, XLSX), rawText.slice(node.start, node.end) === node.text.
+ * 3. Units: JavaScript UTF-16 code units (as returned by String.prototype.length
+ *    and indexed by String.prototype.slice).
+ * 4. Python Mapping:
+ *    - For all Basic Multilingual Plane (BMP, U+0000 to U+FFFF) characters (including
+ *      ASCII, Latin, Devanagari, Cyrillic, CJK, and standard punctuation),
+ *      1 UTF-16 code unit equals exactly 1 Unicode code point (Python str index).
+ *    - For Supplementary Plane characters (e.g., Emoji U+10000+, represented as surrogate
+ *      pairs in UTF-16), JavaScript counts 2 UTF-16 code units per character while
+ *      Python's len() counts 1 Unicode code point.
+ * 5. Normalization:
+ *    - rawText is canonically normalized upon ingestion:
+ *      (a) Leading UTF-8 BOM (\uFEFF) is stripped.
+ *      (b) All line breaks (\r\n and \r) are normalized to standard LF (\n).
+ *    - All node offsets and true 1-based line numbers are computed directly against
+ *      this normalized rawText.
  */
 
 import * as XLSX from 'xlsx';
@@ -25,6 +45,15 @@ if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
 }
 
 /**
+ * Canonically normalizes text: strips leading UTF-8 BOM and normalizes \r\n and \r to \n.
+ */
+export function normalizeRawText(content: string): string {
+  if (!content) return '';
+  let text = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
+  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
+/**
  * Extracts digital text and layout nodes from PDF documents.
  * Falls back to OCR if the document contains scanned raster pages.
  */
@@ -39,48 +68,52 @@ export async function extractTextFromPdf(
 
   const pageCount = Math.min(pdf.numPages, limits.maxPdfPages);
   const nodes: DocumentNode[] = [];
-  const textParts: string[] = [];
-  let currentOffset = 0;
+  let rawText = '';
+  let currentLine = 1;
 
   for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
     if (onProgress) onProgress(Math.round((pageNum / pageCount) * 80));
 
     const page = await pdf.getPage(pageNum);
     const content = await page.getTextContent();
-    const pageStrings: string[] = [];
+    let pageHasText = false;
 
     for (const item of content.items as any[]) {
       if (item.str && item.str.trim()) {
         const str = item.str.trim();
-        pageStrings.push(str);
 
-        const start = currentOffset;
-        const end = start + str.length;
-        currentOffset = end + 1; // +1 for space/newline
+        if (rawText.length > 0) {
+          if (pageHasText) {
+            rawText += ' ';
+          } else {
+            rawText += '\n\n';
+            currentLine += 2;
+          }
+        }
+        pageHasText = true;
+
+        const start = rawText.length;
+        rawText += str;
+        const end = rawText.length;
 
         nodes.push({
           ref: `pdf:page_${pageNum}:item_${nodes.length + 1}`,
+          page: pageNum,
+          line: currentLine,
           text: str,
           start,
           end,
           source: 'digital_text',
-          page: pageNum,
         });
       }
     }
-
-    const pageFullText = pageStrings.join(' ');
-    if (pageFullText) textParts.push(pageFullText);
   }
-
-  const rawText = textParts.join('\n\n');
 
   // Check if PDF is a scanned image (almost zero digital text extracted)
   if (rawText.length < 25 && pageCount > 0) {
     if (onProgress) onProgress(85);
 
     try {
-      // Render first page to offscreen canvas and run OCR
       const page = await pdf.getPage(1);
       const viewport = page.getViewport({ scale: 1.5 });
       const canvas = document.createElement('canvas');
@@ -134,25 +167,30 @@ export async function extractTextFromImage(
     return ret;
   })();
 
-  // Timeout guard for OCR processing
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`OCR processing timed out after ${limits.ocrTimeoutMs / 1000}s`)), limits.ocrTimeoutMs)
   );
 
   const ret = await Promise.race([workerPromise, timeoutPromise]);
   const nodes: DocumentNode[] = [];
-  let currentOffset = 0;
+  let rawText = '';
+  let currentLine = 1;
 
   for (const block of ret.data.blocks || []) {
     for (const paragraph of block.paragraphs || []) {
       const text = paragraph.text?.trim();
       if (text) {
-        const start = currentOffset;
-        const end = start + text.length;
-        currentOffset = end + 1;
+        if (rawText.length > 0) {
+          rawText += '\n\n';
+          currentLine += 2;
+        }
+        const start = rawText.length;
+        rawText += text;
+        const end = rawText.length;
 
         nodes.push({
           ref: `image:ocr_block_${nodes.length + 1}`,
+          line: currentLine,
           text,
           start,
           end,
@@ -163,9 +201,23 @@ export async function extractTextFromImage(
     }
   }
 
+  if (nodes.length === 0 && ret.data.text && ret.data.text.trim()) {
+    const text = ret.data.text.trim();
+    rawText = text;
+    nodes.push({
+      ref: 'image:ocr_block_1',
+      line: 1,
+      text,
+      start: 0,
+      end: text.length,
+      source: 'ocr',
+      confidence: Math.round(ret.data.confidence) / 100,
+    });
+  }
+
   return {
     nodes,
-    rawText: ret.data.text.trim(),
+    rawText,
     confidence: Math.round(ret.data.confidence) / 100,
   };
 }
@@ -178,20 +230,30 @@ export async function extractTextFromDocx(
 ): Promise<{ nodes: DocumentNode[]; rawText: string }> {
   const arrayBuffer = await file.arrayBuffer();
   const result = await mammoth.extractRawText({ arrayBuffer });
-  const rawText = result.value.trim();
+  const rawText = normalizeRawText(result.value);
 
-  const paragraphs = rawText.split(/\n+/).filter((p) => p.trim().length > 0);
+  const lines = rawText.split('\n');
   const nodes: DocumentNode[] = [];
   let currentOffset = 0;
+  let paraIdx = 0;
 
-  paragraphs.forEach((p, idx) => {
-    const start = currentOffset;
-    const end = start + p.length;
-    currentOffset = end + 1;
+  lines.forEach((line, idx) => {
+    const lineNum = idx + 1;
+    const lineStart = currentOffset;
+    currentOffset += line.length + 1; // +1 for '\n'
+
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    const leading = line.length - line.trimStart().length;
+    const start = lineStart + leading;
+    const end = start + trimmed.length;
+    paraIdx++;
 
     nodes.push({
-      ref: `docx:paragraph_${idx + 1}`,
-      text: p.trim(),
+      ref: `docx:paragraph_${paraIdx}`,
+      line: lineNum,
+      text: trimmed,
       start,
       end,
       source: 'digital_text',
@@ -217,16 +279,15 @@ export async function extractTextFromSpreadsheet(
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
   const nodes: DocumentNode[] = [];
-  const textParts: string[] = [];
-  let currentOffset = 0;
+  let rawText = '';
   let firstSheetHeaders: string[] = [];
   const firstSheetRows: string[][] = [];
+  let currentLine = 1;
 
   for (const sheetName of workbook.SheetNames) {
     const sheet = workbook.Sheets[sheetName];
     if (!sheet) continue;
 
-    // Convert sheet to json array of arrays
     const sheetData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     if (sheetData.length === 0) continue;
 
@@ -239,10 +300,10 @@ export async function extractTextFromSpreadsheet(
       }
     }
 
-    // Extract cell coordinates
     for (let r = 0; r < sheetData.length; r++) {
       const row = sheetData[r];
       if (!row) continue;
+      let rowHasCell = false;
 
       for (let c = 0; c < row.length; c++) {
         const val = row[c];
@@ -251,18 +312,28 @@ export async function extractTextFromSpreadsheet(
           const colLetter = XLSX.utils.encode_col(c);
           const cellRef = `${colLetter}${r + 1}`;
 
-          const start = currentOffset;
-          const end = start + str.length;
-          currentOffset = end + 1;
+          if (rawText.length > 0) {
+            if (rowHasCell) {
+              rawText += '\t';
+            } else {
+              rawText += '\n';
+              currentLine++;
+            }
+          }
+          rowHasCell = true;
+
+          const start = rawText.length;
+          rawText += str;
+          const end = rawText.length;
 
           nodes.push({
             ref: `sheet:${sheetName}!${cellRef}`,
+            line: currentLine,
             text: str,
             start,
             end,
             source: 'table_cell',
           });
-          textParts.push(str);
         }
       }
     }
@@ -270,7 +341,7 @@ export async function extractTextFromSpreadsheet(
 
   return {
     nodes,
-    rawText: textParts.join(' | '),
+    rawText,
     sheetNames: workbook.SheetNames,
     tableHeaders: firstSheetHeaders,
     tableRows: firstSheetRows,
@@ -284,28 +355,53 @@ export async function extractTextFromJson(
   file: File
 ): Promise<{ nodes: DocumentNode[]; rawText: string }> {
   const content = await file.text();
-  const parsed = JSON.parse(content);
+  const rawText = normalizeRawText(content);
+  const parsed = JSON.parse(rawText);
 
   const nodes: DocumentNode[] = [];
-  let currentOffset = 0;
+  let searchOffset = 0;
 
   function traverse(obj: any, path: string) {
     if (obj === null || obj === undefined) return;
 
     if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
-      const str = String(obj);
-      const start = currentOffset;
-      const end = start + str.length;
-      currentOffset = end + 1;
-
-      nodes.push({
-        ref: `json:${path}`,
-        text: str,
-        start,
-        end,
-        source: 'json_value',
-      });
-      return;
+      const strVal = String(obj);
+      if (typeof obj === 'string') {
+        const needle = JSON.stringify(obj);
+        const found = rawText.indexOf(needle, searchOffset);
+        if (found !== -1) {
+          const start = found + 1; // inside quotes
+          const end = found + needle.length - 1;
+          searchOffset = found + needle.length;
+          const line = rawText.slice(0, start).split('\n').length;
+          nodes.push({
+            ref: `json:${path}`,
+            line,
+            text: rawText.slice(start, end),
+            start,
+            end,
+            source: 'json_value',
+          });
+          return;
+        }
+      } else {
+        const found = rawText.indexOf(strVal, searchOffset);
+        if (found !== -1) {
+          const start = found;
+          const end = start + strVal.length;
+          searchOffset = end;
+          const line = rawText.slice(0, start).split('\n').length;
+          nodes.push({
+            ref: `json:${path}`,
+            line,
+            text: strVal,
+            start,
+            end,
+            source: 'json_value',
+          });
+          return;
+        }
+      }
     }
 
     if (Array.isArray(obj)) {
@@ -321,7 +417,7 @@ export async function extractTextFromJson(
   }
 
   traverse(parsed, '$');
-  return { nodes, rawText: content };
+  return { nodes, rawText };
 }
 
 /**
@@ -331,91 +427,122 @@ export async function extractTextFromXml(
   file: File
 ): Promise<{ nodes: DocumentNode[]; rawText: string }> {
   const content = await file.text();
+  const rawText = normalizeRawText(content);
   const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(content, 'application/xml');
+  const xmlDoc = parser.parseFromString(rawText, 'application/xml');
 
-  // Check for parser error
   const parserError = xmlDoc.querySelector('parsererror');
   if (parserError) {
     throw new Error('XML parsing failed: malformed document syntax.');
   }
 
   const nodes: DocumentNode[] = [];
-  let currentOffset = 0;
+  let searchOffset = 0;
 
   function walk(node: Node, path: string) {
     if (node.nodeType === Node.TEXT_NODE) {
       const val = node.nodeValue?.trim();
       if (val) {
-        const start = currentOffset;
-        const end = start + val.length;
-        currentOffset = end + 1;
-
-        nodes.push({
-          ref: `xml:${path}`,
-          text: val,
-          start,
-          end,
-          source: 'xml_node',
-        });
+        const found = rawText.indexOf(val, searchOffset);
+        if (found !== -1) {
+          const start = found;
+          const end = start + val.length;
+          searchOffset = end;
+          const line = rawText.slice(0, start).split('\n').length;
+          nodes.push({
+            ref: `xml:${path}`,
+            line,
+            text: val,
+            start,
+            end,
+            source: 'xml_node',
+          });
+        }
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const elem = node as Element;
       const elemPath = `${path}/${elem.tagName}`;
 
-      // Attributes
       for (let i = 0; i < elem.attributes.length; i++) {
         const attr = elem.attributes[i];
-        if (attr.value?.trim()) {
-          const val = attr.value.trim();
-          nodes.push({
-            ref: `xml:${elemPath}[@${attr.name}]`,
-            text: val,
-            start: currentOffset,
-            end: currentOffset + val.length,
-            source: 'xml_node',
-          });
-          currentOffset += val.length + 1;
+        const val = attr.value?.trim();
+        if (val) {
+          const attrPattern = `${attr.name}="${val}"`;
+          let found = rawText.indexOf(attrPattern, searchOffset);
+          let valStart = -1;
+          if (found !== -1) {
+            valStart = found + attr.name.length + 2;
+          } else {
+            const singlePattern = `${attr.name}='${val}'`;
+            found = rawText.indexOf(singlePattern, searchOffset);
+            if (found !== -1) {
+              valStart = found + attr.name.length + 2;
+            } else {
+              found = rawText.indexOf(val, searchOffset);
+              if (found !== -1) valStart = found;
+            }
+          }
+          if (valStart !== -1) {
+            const start = valStart;
+            const end = start + val.length;
+            searchOffset = end;
+            const line = rawText.slice(0, start).split('\n').length;
+            nodes.push({
+              ref: `xml:${elemPath}[@${attr.name}]`,
+              line,
+              text: val,
+              start,
+              end,
+              source: 'xml_node',
+            });
+          }
         }
       }
 
-      // Children
       node.childNodes.forEach((child) => walk(child, elemPath));
     }
   }
 
   walk(xmlDoc.documentElement, '');
-  return { nodes, rawText: content };
+  return { nodes, rawText };
 }
 
 /**
- * Extracts plain text line-by-line.
+ * Extracts plain text line-by-line with true 1-based line numbering and exact slice preservation.
  */
 export async function extractTextFromPlainText(
   file: File
 ): Promise<{ nodes: DocumentNode[]; rawText: string }> {
   const content = await file.text();
-  const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const rawText = normalizeRawText(content);
+  const lines = rawText.split('\n');
 
   const nodes: DocumentNode[] = [];
   let currentOffset = 0;
 
   lines.forEach((line, idx) => {
-    const text = line.trim();
-    const start = currentOffset;
-    const end = start + text.length;
-    currentOffset = end + 1;
+    const lineNum = idx + 1;
+    const lineStart = currentOffset;
+    currentOffset += line.length + 1; // +1 for '\n'
+
+    const trimmed = line.trim();
+    if (!trimmed) return; // Blank lines do not generate nodes, but line number advances
+
+    const leading = line.length - line.trimStart().length;
+    const start = lineStart + leading;
+    const end = start + trimmed.length;
 
     nodes.push({
-      ref: `txt:line_${idx + 1}`,
-      text,
+      ref: `txt:line_${lineNum}`,
+      line: lineNum,
+      text: trimmed,
       start,
       end,
       source: 'digital_text',
     });
   });
 
-  return { nodes, rawText: content };
+  return { nodes, rawText };
 }
 
 /**
@@ -454,10 +581,10 @@ export async function extractUnifiedDocument(
     ocrConfidence = pdfRes.ocrConfidence;
     previewData = {
       type: 'pdf',
-      textSample: rawText.slice(0, 800),
+      textSample: rawText.slice(0, 1200),
       pdfPageSample: `Page 1 of ${pageCount}`,
     };
-  } else if (format === 'png' || format === 'jpeg') {
+  } else if (format === 'image') {
     const imgRes = await extractTextFromImage(file, limits, onProgress);
     nodes = imgRes.nodes;
     rawText = imgRes.rawText;
@@ -474,9 +601,9 @@ export async function extractUnifiedDocument(
     rawText = docxRes.rawText;
     previewData = {
       type: 'text',
-      textSample: rawText.slice(0, 800),
+      textSample: rawText.slice(0, 1500),
     };
-  } else if (format === 'xlsx' || format === 'csv') {
+  } else if (format === 'spreadsheet') {
     const sheetRes = await extractTextFromSpreadsheet(file);
     nodes = sheetRes.nodes;
     rawText = sheetRes.rawText;
@@ -485,7 +612,6 @@ export async function extractUnifiedDocument(
       type: 'table',
       tableHeaders: sheetRes.tableHeaders,
       tableRows: sheetRes.tableRows,
-      textSample: rawText.slice(0, 800),
     };
   } else if (format === 'json') {
     const jsonRes = await extractTextFromJson(file);
@@ -493,7 +619,7 @@ export async function extractUnifiedDocument(
     rawText = jsonRes.rawText;
     previewData = {
       type: 'text',
-      textSample: rawText.slice(0, 800),
+      textSample: rawText.slice(0, 1500),
     };
   } else if (format === 'xml') {
     const xmlRes = await extractTextFromXml(file);
@@ -501,26 +627,26 @@ export async function extractUnifiedDocument(
     rawText = xmlRes.rawText;
     previewData = {
       type: 'text',
-      textSample: rawText.slice(0, 800),
+      textSample: rawText.slice(0, 1500),
     };
   } else {
-    // txt / fallback
+    // Plain text / CSV fallback
     const txtRes = await extractTextFromPlainText(file);
     nodes = txtRes.nodes;
     rawText = txtRes.rawText;
     previewData = {
       type: 'text',
-      textSample: rawText.slice(0, 800),
+      textSample: rawText.slice(0, 1500),
     };
   }
 
-  const elapsed = Math.round((performance.now() - startTime) * 10) / 10;
-  const wordCount = rawText ? rawText.trim().split(/\s+/).length : 0;
+  const elapsed = Math.round(performance.now() - startTime);
+  const words = rawText.trim().split(/\s+/).filter(Boolean).length;
 
   return {
-    docId: 'DOC-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
-    fileName: sanitizedName,
-    fileType: format.toUpperCase(),
+    docId: 'doc_' + Math.random().toString(36).substring(2, 10),
+    fileName: file.name,
+    fileType: file.type || 'text/plain',
     fileSize: file.size,
     mimeType: file.type || 'application/octet-stream',
     nodes,
@@ -528,10 +654,11 @@ export async function extractUnifiedDocument(
     metadata: {
       pageCount,
       sheetNames,
-      wordCount,
+      wordCount: words,
       extractionTimeMs: elapsed,
       ocrPerformed,
       ocrConfidence,
+      createdAt: new Date().toISOString(),
     },
     previewData,
   };

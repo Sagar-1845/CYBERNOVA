@@ -8,6 +8,16 @@
  * on static platforms (e.g. GitHub Pages) where HTTP 405 Method Not Allowed would otherwise occur.
  */
 
+import {
+  validateVerhoeff,
+  validateAadhaar,
+  validateLuhn,
+  validateCreditCard,
+  validateBankAccount,
+  validatePan,
+  isTollFreeNumber
+} from './detection/validators';
+
 export interface DetectedEntity {
   type: string;
   value: string;
@@ -35,7 +45,7 @@ export const DEFAULT_MASKING_POLICY: MaskingPolicy = {
   maskPan: true,
   maskPhone: true,
   maskEmail: true,
-  maskName: false, // PRESERVED BY DEFAULT: Names like "Aarav Sharma" remain visible!
+  maskName: true, // Enabled: Personal names are masked to protect PII
   maskGstin: true,
   maskPassport: true,
   maskVoterId: true,
@@ -93,6 +103,7 @@ export interface PipelineProcessResult {
   all_warnings: string[];
   error?: string | null;
   enclave_mode?: 'live_backend' | 'client_side_enclave';
+  verification_status?: 'VERIFIED SAFE' | 'LEAK DETECTED' | 'VERIFICATION FAILED' | 'NOT EXECUTED';
 }
 
 export interface SecurityEvaluationResult {
@@ -124,6 +135,7 @@ export interface SecurityEvaluationResult {
   };
   engineering_indicator: string;
   enclave_mode?: 'live_backend' | 'client_side_enclave';
+  verification_status?: 'VERIFIED SAFE' | 'LEAK DETECTED' | 'VERIFICATION FAILED' | 'NOT EXECUTED';
 }
 
 export interface LeakCheckResult {
@@ -187,19 +199,146 @@ export const DEFAULT_POLICIES: Record<string, any> = {
   },
 };
 
+export interface RiskBand {
+  min: number;
+  max: number;
+  label: string;
+  severity: 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  color: string;
+  badgeVariant: 'green' | 'cyan' | 'saffron' | 'destructive';
+}
+
+export const RISK_BANDS: RiskBand[] = [
+  { min: 0, max: 10, label: '0-10 Safe', severity: 'SAFE', color: 'bg-emerald-500/60', badgeVariant: 'green' },
+  { min: 11, max: 35, label: '11-35 Low', severity: 'LOW', color: 'bg-cyan-500/70', badgeVariant: 'cyan' },
+  { min: 36, max: 60, label: '36-60 Medium', severity: 'MEDIUM', color: 'bg-amber-500/80', badgeVariant: 'saffron' },
+  { min: 61, max: 84, label: '61-84 High', severity: 'HIGH', color: 'bg-orange-500/90', badgeVariant: 'destructive' },
+  { min: 85, max: 100, label: '85-100 Critical', severity: 'CRITICAL', color: 'bg-red-600', badgeVariant: 'destructive' },
+];
+
+export function getRiskBand(score: number, entityCount: number = 0): RiskBand {
+  if (entityCount === 0 && score <= 10) return RISK_BANDS[0];
+  const bounded = Math.max(0, Math.min(100, score));
+  if (bounded <= 35) return RISK_BANDS[1];
+  if (bounded <= 60) return RISK_BANDS[2];
+  if (bounded <= 84) return RISK_BANDS[3];
+  return RISK_BANDS[4];
+}
+
+const STOPWORDS = new Set([
+  'is','are','was','were','be','been','being','have','has','had','do','does','did',
+  'will','would','shall','should','can','could','may','might','must',
+  'a','an','the','and','or','but','if','because','as','until','while',
+  'of','at','by','for','with','about','between','into','through','during',
+  'before','after','to','from','in','out','on','off','over','under',
+  'then','once','here','there','when','where','why','how',
+  'all','any','both','each','few','more','most','other','some','such',
+  'no','nor','not','only','own','same','so','than','too','very','just','now',
+  'she','he','they','them','her','his','it','its','we','us','our',
+  'wants','wanted','wanting','want','requires','required','requiring','require',
+  'apply','applies','applied','applying','eligible','eligibility',
+  'support','notes','details','database','portal','care','service','services',
+  'record','records','status','profile','form','forms','information','data',
+  'history','list','user','users','client','clients','request','requests',
+  'report','reports','invoice','invoices','help','team','center','centre',
+  'desk','account','accounts','query','queries','terms','conditions','id',
+  'number','verification','verified','available','attached','review','sanction',
+  'document','documents','sent','wishes','told','said','asked','approved',
+  'portal','system','cibil','score','utility','bill','deed'
+]);
+
+const HINDI_STOPWORDS = new Set([
+  'है','हैं','था','थी','थे','होगा','होगी','होंगे',
+  'का','की','के','को','में','से','पर','और','या','लेकिन','अगर','तो',
+  'चाहता','चाहती','चाहते','लागू','विवरण','सहायता','स्थिति','ऋण','खाता',
+  'दस्तावेज़','आईडी','उपलब्ध','संलग्न','ने','आयु','सूची','इतिहास','सेवा','सेवाएँ',
+  'फ़ाइल','फाइल','आज','मदद','रिकॉर्ड','फॉर्म','जांच','डेटाबेस'
+]);
+
+const PERSON_CUE_REGEX = /(?:\b(?:borrower|applicant|customer|patient|account\s+holder|father['’]?s\s+name|guarantor|officer|name|mr\.?|mrs\.?|ms\.?|shri|smt\.?|dr\.?)\b|(?:उधारकर्ता|आवेदक|ग्राहक|मरीज़|मरीज|रोगी|नाम|खाता\s+धारक|पिता\s+का\s+नाम|श्री|श्रीमती|डॉक्टर|डाॅ\.?)(?=[\s:=-]|$))/gi;
+const WORD_TOKEN_REGEX = /([a-zA-Z\u0900-\u0963\u0970-\u097F]+)/g;
+
+export interface VerificationResult {
+  status: 'VERIFIED SAFE' | 'LEAK DETECTED' | 'VERIFICATION FAILED' | 'NOT EXECUTED';
+  leaks: string[];
+}
+
+export function verifySanitizedPayload(
+  sanitized: string,
+  vaultMapping: Record<string, string>,
+  policy: MaskingPolicy
+): VerificationResult {
+  if (!sanitized) {
+    return { status: 'NOT EXECUTED', leaks: [] };
+  }
+  const leaks: string[] = [];
+
+  // (a) Confirm every original value/vault entry is absent from the payload
+  for (const [placeholder, rawVal] of Object.entries(vaultMapping)) {
+    if (rawVal && rawVal.length > 2 && sanitized.includes(rawVal)) {
+      leaks.push(`Vault identifier leaked: ${placeholder}`);
+    }
+  }
+
+  // (b) Run separate heuristic scan with different pattern set
+  const independentPatterns = [
+    { name: 'Unmasked 12-digit ID', regex: /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/ },
+    { name: 'Unmasked PAN format', regex: /\b[A-Za-z]{5}\d{4}[A-Za-z]\b/ },
+    { name: 'Unmasked Mobile', regex: /(?:\+?91[\s-]?)?[6-9]\d{9}\b/ },
+    { name: 'Unmasked Email', regex: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/ },
+    { name: 'Unmasked Financial Amount', regex: /(?:INR|Rs\.?|₹)\s*\d+/i },
+  ];
+  for (const pat of independentPatterns) {
+    if (pat.regex.test(sanitized)) {
+      leaks.push(pat.name);
+    }
+  }
+
+  // (c) Independent name-candidate heuristic (separate code path)
+  if (policy.maskName !== false) {
+    const independentNameHeuristic = /(?:\b(?:Mr\.?|Mrs\.?|Ms\.?|Dr\.?|Shri|Smt\.?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2}))/g;
+    let m;
+    while ((m = independentNameHeuristic.exec(sanitized)) !== null) {
+      if (m[1] && !m[1].includes('[') && !m[1].includes('SYNTH')) {
+        leaks.push(`Potential unmasked name candidate detected: ${m[1]}`);
+      }
+    }
+  }
+
+  if (leaks.length > 0) {
+    return { status: 'LEAK DETECTED', leaks };
+  }
+  return { status: 'VERIFIED SAFE', leaks: [] };
+}
+
 // ── PII Patterns for Local Enclave Detection ─────────────────────────────────
-export const PII_PATTERNS: { type: string; regex: RegExp; key: keyof MaskingPolicy }[] = [
-  { type: 'AADHAAR', regex: /\b\d{4}\s\d{4}\s\d{4}\b|\b\d{12}\b/g, key: 'maskAadhaar' },
-  { type: 'PAN', regex: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g, key: 'maskPan' },
-  { type: 'PHONE', regex: /(?:\+91[\s-]?)?[6-9]\d{9}\b/g, key: 'maskPhone' },
-  { type: 'EMAIL', regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, key: 'maskEmail' },
-  { type: 'GSTIN', regex: /\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}\b/g, key: 'maskGstin' },
-  { type: 'PASSPORT', regex: /\b[A-PR-WYa-pr-wy][1-9]\d\s?\d{4}[1-9]\b/g, key: 'maskPassport' },
-  { type: 'VOTER_ID', regex: /\b[A-Z]{3}[0-9]{7}\b/g, key: 'maskVoterId' },
+export const PII_PATTERNS: { type: string; regex: RegExp; key: keyof MaskingPolicy; group?: number; confidence?: number }[] = [
+  { type: 'AADHAAR', regex: /\b\d{4}\s\d{4}\s\d{4}\b|\b\d{12}\b/g, key: 'maskAadhaar', confidence: 0.90 },
+  { type: 'PAN', regex: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g, key: 'maskPan', confidence: 0.95 },
+  { type: 'PHONE', regex: /(?:\+91[\s-]?)?[6-9]\d{9}\b/g, key: 'maskPhone', confidence: 0.90 },
+  { type: 'EMAIL', regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, key: 'maskEmail', confidence: 0.98 },
+  { type: 'GSTIN', regex: /\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}\b/g, key: 'maskGstin', confidence: 0.95 },
+  { type: 'PASSPORT', regex: /\b[A-PR-WYa-pr-wy][1-9]\d\s?\d{4}[1-9]\b/g, key: 'maskPassport', confidence: 0.92 },
+  { type: 'VOTER_ID', regex: /\b[A-Z]{3}[0-9]{7}\b/g, key: 'maskVoterId', confidence: 0.85 },
+  {
+    type: 'FINANCIAL',
+    regex: /(?:(?:gross\s+annual\s+income|annual\s+income|monthly\s+income|gross\s+salary|net\s+salary|net\s+pay|ctc|salary|income|loan\s+amount|gross|वार्षिक\s+आय|मासिक\s+आय|सकल\s+आय|वेतन|आय|ऋण\s+राशि)(?:\s*[:=-]|\s+is|\s+of|\s+was)?[\s:=-]+)((?:(?:INR|Rs\.?|₹)\s*)?(?:\d{1,3}(?:,\d{2})+,\d{3}|\d{1,3}(?:,\d{3})+(?:,\d{3})*|\d{4,10})(?:\.\d{1,2})?(?!\d)(?:\s*(?:lakh|crore|lakhs|crores|लाख|करोड़))?)/gi,
+    key: 'maskFinancial',
+    group: 1,
+    confidence: 0.95,
+  },
+  {
+    type: 'FINANCIAL',
+    regex: /(?:^|[\s(])((?:INR|Rs\.?|₹)\s*(?:\d{1,3}(?:,\d{2})+,\d{3}|\d{1,3}(?:,\d{3})+(?:,\d{3})*|\d{1,10})(?:\.\d{1,2})?(?!\d)(?:\s*(?:lakh|crore|lakhs|crores|लाख|करोड़))?)/gi,
+    key: 'maskFinancial',
+    group: 1,
+    confidence: 0.55,
+  },
   {
     type: 'NAME',
-    regex: /\b(?:Aarav Sharma|Priya Venkatesh|Ramesh Kumar|Anita Rao|Vikram Singh|Rajesh Patel)\b/g,
+    regex: /\b(?:(?:Mr|Mrs|Ms|Dr|Shri|Smt|Kumar|Singh|Sharma|Patel|Reddy|Nair|Rao|Das|Joshi|Pillai|Iyer|Menon|Verma|Gupta)\b\.?\s+)?[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){1,3}\b/g,
     key: 'maskName',
+    confidence: 0.70,
   },
 ];
 
@@ -274,29 +413,232 @@ export async function executePipelineProcess(
 
   // ── Client-Side Sovereign Enclave Processing ──────────────────────────────
   const startTime = performance.now();
-  let sanitized = promptText;
   const entities: DetectedEntity[] = [];
-  const entityCount: Record<string, number> = {};
-  const mapping: Record<string, string> = {};
+  interface RawSpan {
+    type: string;
+    value: string;
+    start: number;
+    end: number;
+    shouldMask: boolean;
+    confidence: number;
+    validated?: boolean;
+  }
+  const rawSpans: RawSpan[] = [];
 
-  for (const { type, regex, key } of PII_PATTERNS) {
-    // If the active policy has disabled masking for this type, do NOT mask it!
+  // 1. CREDIT / DEBIT CARDS (Luhn Checksum + MII prefix check) - Run BEFORE Aadhaar
+  const cardRe = /\b(?:\d[ -]?){12,18}\d\b/g;
+  let cardMatch;
+  while ((cardMatch = cardRe.exec(promptText)) !== null) {
+    const rawVal = cardMatch[0];
+    const { isValid, confidence } = validateCreditCard(rawVal);
+    if (isValid) {
+      rawSpans.push({
+        type: 'CREDIT_CARD',
+        value: rawVal,
+        start: cardMatch.index,
+        end: cardMatch.index + rawVal.length,
+        shouldMask: true,
+        confidence,
+        validated: true,
+      });
+    }
+  }
+
+  // 2. BANK ACCOUNTS (Contextual Cue + 9-18 digits)
+  const bankRe = /\b\d{9,18}\b/g;
+  let bankMatch;
+  const bankSpans = new Set<string>();
+  while ((bankMatch = bankRe.exec(promptText)) !== null) {
+    const rawVal = bankMatch[0];
+    const ctxStart = Math.max(0, bankMatch.index - 40);
+    const ctxEnd = Math.min(promptText.length, bankMatch.index + rawVal.length + 20);
+    const surrounding = promptText.slice(ctxStart, ctxEnd);
+    const { isValid, confidence } = validateBankAccount(rawVal, surrounding);
+    if (isValid) {
+      rawSpans.push({
+        type: 'BANK_ACCOUNT',
+        value: rawVal,
+        start: bankMatch.index,
+        end: bankMatch.index + rawVal.length,
+        shouldMask: true,
+        confidence,
+        validated: true,
+      });
+      bankSpans.add(bankMatch.index + ':' + (bankMatch.index + rawVal.length));
+    }
+  }
+
+  // 3. AADHAAR (12 digits, first digit 2-9, Verhoeff checksum)
+  const aadhaarRe = /(?<!\d)(?<!\d\s)(?<!\d-)(?:\d{4}[ -]\d{4}[ -]\d{4}|\d{12})(?![\s-]?\d)/g;
+  let aadhaarMatch;
+  while ((aadhaarMatch = aadhaarRe.exec(promptText)) !== null) {
+    const rawVal = aadhaarMatch[0];
+    const key = aadhaarMatch.index + ':' + (aadhaarMatch.index + rawVal.length);
+    if (bankSpans.has(key)) continue;
+    const ctxStart = Math.max(0, aadhaarMatch.index - 35);
+    const ctxEnd = Math.min(promptText.length, aadhaarMatch.index + rawVal.length + 20);
+    const surrounding = promptText.slice(ctxStart, ctxEnd);
+    const { isValid, confidence } = validateAadhaar(rawVal, surrounding);
+    if (isValid) {
+      const clean = rawVal.replace(/\D/g, '');
+      const hasVerhoeff = validateVerhoeff(clean);
+      rawSpans.push({
+        type: 'AADHAAR',
+        value: rawVal,
+        start: aadhaarMatch.index,
+        end: aadhaarMatch.index + rawVal.length,
+        shouldMask: policy.maskAadhaar !== false,
+        confidence,
+        validated: hasVerhoeff,
+      });
+    }
+  }
+
+  // 4. PAN (Statutory 4th character check)
+  const panRe = /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g;
+  let panMatch;
+  while ((panMatch = panRe.exec(promptText)) !== null) {
+    const rawVal = panMatch[0];
+    if (validatePan(rawVal)) {
+      rawSpans.push({
+        type: 'PAN',
+        value: rawVal,
+        start: panMatch.index,
+        end: panMatch.index + rawVal.length,
+        shouldMask: policy.maskPan !== false,
+        confidence: 0.98,
+        validated: true,
+      });
+    }
+  }
+
+  // 5. PHONE (Mobile, excluding 1800/1860)
+  const phoneRe = /(?<!\d)(?:(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}|(?:\+?91[\s-]?)?[6-9]\d{9})(?!\d)/g;
+  let phoneMatch;
+  while ((phoneMatch = phoneRe.exec(promptText)) !== null) {
+    const rawVal = phoneMatch[0];
+    if (!isTollFreeNumber(rawVal)) {
+      rawSpans.push({
+        type: 'PHONE',
+        value: rawVal,
+        start: phoneMatch.index,
+        end: phoneMatch.index + rawVal.length,
+        shouldMask: policy.maskPhone !== false,
+        confidence: 0.92,
+        validated: true,
+      });
+    }
+  }
+
+  // 6. Run other PII patterns (EMAIL, GSTIN, PASSPORT, VOTER_ID, FINANCIAL, etc.)
+  for (const { type, regex, key, group, confidence } of PII_PATTERNS) {
+    if (['AADHAAR', 'PAN', 'PHONE'].includes(type)) continue;
     const shouldMask = policy[key] !== false;
-
     let match;
     const re = new RegExp(regex.source, regex.flags);
     while ((match = re.exec(promptText)) !== null) {
-      const val = match[0];
-      entities.push({ type, value: val });
-
-      if (shouldMask) {
-        entityCount[type] = (entityCount[type] || 0) + 1;
-        const maskToken = formatMaskValue(type, val, entityCount[type], policy.maskingStyle);
-        mapping[maskToken] = val;
-        sanitized = sanitized.replace(val, maskToken);
-      }
+      const val = group && match[group] ? match[group] : match[0];
+      const start = group && match[group] ? match.index + match[0].indexOf(match[group]) : match.index;
+      const end = start + val.length;
+      rawSpans.push({ type, value: val, start, end, shouldMask, confidence: confidence || 0.85, validated: true });
     }
   }
+
+  // 7. Token-based Contextual PERSON Extraction
+  const cueRe = new RegExp(PERSON_CUE_REGEX.source, PERSON_CUE_REGEX.flags);
+  let cueMatch;
+  while ((cueMatch = cueRe.exec(promptText)) !== null) {
+    const cueEnd = cueMatch.index + cueMatch[0].length;
+    const remainder = promptText.slice(cueEnd);
+    const sepMatch = remainder.match(/^(?:\s+(?:is|was|named|called|of))?[\s:=-]+/);
+    if (!sepMatch) continue;
+    const afterSepIdx = cueEnd + sepMatch[0].length;
+    const candidateText = promptText.slice(afterSepIdx);
+
+    const tokenRe = new RegExp(WORD_TOKEN_REGEX.source, WORD_TOKEN_REGEX.flags);
+    let tokenMatch;
+    const tokens: { word: string; start: number; end: number }[] = [];
+    let lastEnd = 0;
+    while ((tokenMatch = tokenRe.exec(candidateText)) !== null) {
+      const inter = candidateText.slice(lastEnd, tokenMatch.index);
+      if (tokens.length > 0 && /[()[\]{},;.!?:\/\-]/.test(inter)) break;
+      const word = tokenMatch[1];
+      if (/^[A-Za-z]/.test(word) && word[0] !== word[0].toUpperCase()) break;
+      const lower = word.toLowerCase();
+      if (STOPWORDS.has(lower) || HINDI_STOPWORDS.has(word)) break;
+      tokens.push({ word, start: afterSepIdx + tokenMatch.index, end: afterSepIdx + tokenMatch.index + word.length });
+      lastEnd = tokenMatch.index + word.length;
+      if (tokens.length === 3) break;
+    }
+    if (tokens.length > 0) {
+      const nameStart = tokens[0].start;
+      const nameEnd = tokens[tokens.length - 1].end;
+      const nameVal = promptText.slice(nameStart, nameEnd);
+      rawSpans.push({
+        type: 'NAME',
+        value: nameVal,
+        start: nameStart,
+        end: nameEnd,
+        shouldMask: policy.maskName !== false,
+        confidence: 0.92,
+        validated: true,
+      });
+    }
+  }
+
+  // Deduplicate overlapping spans (Priority: BANK_ACCOUNT / CREDIT_CARD > AADHAAR, validated > unvalidated, longest span)
+  rawSpans.sort((a, b) => {
+    let aPrio = 0;
+    if (a.type === 'CREDIT_CARD') aPrio = -3;
+    else if (a.type === 'BANK_ACCOUNT') aPrio = -2;
+    else if (a.validated) aPrio = -1;
+
+    let bPrio = 0;
+    if (b.type === 'CREDIT_CARD') bPrio = -3;
+    else if (b.type === 'BANK_ACCOUNT') bPrio = -2;
+    else if (b.validated) bPrio = -1;
+
+    return a.start - b.start || aPrio - bPrio || (b.end - b.start) - (a.end - a.start);
+  });
+
+  const dedupedSpans: typeof rawSpans = [];
+  for (const cand of rawSpans) {
+    let overlap = false;
+    for (const accepted of dedupedSpans) {
+      if (!(cand.end <= accepted.start || cand.start >= accepted.end)) {
+        overlap = true;
+        break;
+      }
+    }
+    if (!overlap) {
+      dedupedSpans.push(cand);
+    }
+  }
+  dedupedSpans.sort((a, b) => a.start - b.start);
+
+  // 3. Precise Span-Based Masking (replaces only group-1 / name-token spans, never cue words)
+  // Sort descending by start to preserve text indices during replacement
+  const sortedForMasking = [...dedupedSpans].sort((a, b) => b.start - a.start);
+  let sanitized = promptText;
+  const entityCount: Record<string, number> = {};
+  const mapping: Record<string, string> = {};
+
+  for (const span of dedupedSpans) {
+    entities.push({ type: span.type, value: span.value, confidence: span.confidence });
+  }
+
+  for (const span of sortedForMasking) {
+    if (span.shouldMask) {
+      entityCount[span.type] = (entityCount[span.type] || 0) + 1;
+      const maskToken = formatMaskValue(span.type, span.value, entityCount[span.type], policy.maskingStyle);
+      mapping[maskToken] = span.value;
+      sanitized = sanitized.slice(0, span.start) + maskToken + sanitized.slice(span.end);
+    }
+  }
+
+  // 4. Pre-dispatch Heuristic Verification & Outbound Gate
+  const verification = verifySanitizedPayload(sanitized, mapping, policy);
+  const isSafe = verification.status === 'VERIFIED SAFE';
 
   // Synthetic local LLM response preserving placeholders
   let llmRaw = '';
@@ -322,18 +664,21 @@ export async function executePipelineProcess(
   return {
     request_id: 'REQ-ENCLAVE-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
     task_type: taskType,
-    status: 'COMPLETED_ENCLAVE_DEIDENTIFIED',
+    status: isSafe ? 'COMPLETED_ENCLAVE_DEIDENTIFIED' : 'BLOCKED_LEAK_PREVENTED',
     original_text: promptText,
     sanitized_text: sanitized,
-    llm_raw_response: llmRaw,
-    restored_response: restored,
+    llm_raw_response: isSafe ? llmRaw : 'Blocked - not dispatched',
+    restored_response: isSafe ? restored : 'Blocked - not dispatched',
     model_used: 'zeroleak-sovereign-enclave-v2',
     provider: 'ZeroLeak AI Client Sovereign Enclave',
     processing_time_ms: elapsed,
     outbound_payload: {
       model: 'zeroleak-sovereign-enclave-v2',
-      messages: [{ role: 'user', content: sanitized }],
+      messages: [{ role: 'user', content: isSafe ? sanitized : '[BLOCKED - NOT DISPATCHED]' }],
+      blocked: !isSafe,
+      verification_status: verification.status,
     },
+    verification_status: verification.status,
     mock: true,
     placeholder_validation: {
       valid: true,

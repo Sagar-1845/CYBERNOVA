@@ -1,0 +1,386 @@
+{
+  "document": "variant_b.txt",
+  "tier_1_entities": [
+    {
+      "type": "PERSON",
+      "value": "Siddharth Mukherjee",
+      "tier": "T1",
+      "start": 95,
+      "end": 114
+    },
+    {
+      "type": "AADHAAR",
+      "value": "3920 1847 5622",
+      "tier": "T1",
+      "start": 141,
+      "end": 155
+    },
+    {
+      "type": "PAN",
+      "value": "BKZPM7102G",
+      "tier": "T1",
+      "start": 169,
+      "end": 179
+    },
+    {
+      "type": "PHONE",
+      "value": "+91 9765432109",
+      "tier": "T1",
+      "start": 199,
+      "end": 213
+    },
+    {
+      "type": "PHONE",
+      "value": "6345098712",
+      "tier": "T1",
+      "start": 227,
+      "end": 237
+    },
+    {
+      "type": "EMAIL",
+      "value": "smukherjee@techfin-solutions.com",
+      "tier": "T1",
+      "start": 251,
+      "end": 283
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "INR 31,00,000",
+      "tier": "T1",
+      "start": 437,
+      "end": 450
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "55,00,000",
+      "tier": "T1",
+      "start": 486,
+      "end": 495
+    },
+    {
+      "type": "BANK_ACCOUNT",
+      "value": "401928374650",
+      "tier": "T1",
+      "start": 519,
+      "end": 531
+    },
+    {
+      "type": "IFSC",
+      "value": "ICIC0000452",
+      "tier": "T1",
+      "start": 545,
+      "end": 556
+    },
+    {
+      "type": "CREDIT_CARD",
+      "value": "4111 2222 3333 4448",
+      "tier": "T1",
+      "start": 582,
+      "end": 601
+    },
+    {
+      "type": "GSTIN",
+      "value": "24AAFCB9988D1ZQ",
+      "tier": "T1",
+      "start": 645,
+      "end": 660
+    },
+    {
+      "type": "PASSPORT",
+      "value": "Z9182736",
+      "tier": "T1",
+      "start": 679,
+      "end": 687
+    },
+    {
+      "type": "VOTER_ID",
+      "value": "TUV5544332",
+      "tier": "T1",
+      "start": 700,
+      "end": 710
+    },
+    {
+      "type": "PHONE",
+      "value": "9122334455",
+      "tier": "T1",
+      "start": 797,
+      "end": 807
+    },
+    {
+      "type": "EMAIL",
+      "value": "neeraj.kulkarni@techfin-solutions.com",
+      "tier": "T1",
+      "start": 1290,
+      "end": 1327
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "2,15,000",
+      "tier": "T1",
+      "start": 1390,
+      "end": 1398
+    },
+    {
+      "type": "PERSON",
+      "value": "Sanjay Singhania",
+      "tier": "T1",
+      "start": 1485,
+      "end": 1501
+    },
+    {
+      "type": "PERSON",
+      "value": "पूजा शर्मा",
+      "tier": "T1",
+      "start": 2320,
+      "end": 2330
+    },
+    {
+      "type": "AADHAAR",
+      "value": "9012 3456 7894",
+      "tier": "T1",
+      "start": 2344,
+      "end": 2358
+    },
+    {
+      "type": "PHONE",
+      "value": "9711223344",
+      "tier": "T1",
+      "start": 2367,
+      "end": 2377
+    },
+    {
+      "type": "FINANCIAL",
+      "value": "₹ 21,00,000",
+      "tier": "T1",
+      "start": 2390,
+      "end": 2401
+    }
+  ],
+  "tier_2_entities": [
+    {
+      "type": "DATE_OF_BIRTH",
+      "value": "05-10-1985",
+      "tier": "T2",
+      "start": 300,
+      "end": 310
+    },
+    {
+      "type": "ADDRESS",
+      "value": "House No 42, Green Glen Layout, Outer Ring Road, Bellandur, Bengaluru 560103",
+      "tier": "T2",
+      "start": 334,
+      "end": 410
+    },
+    {
+      "type": "DRIVING_LICENSE",
+      "value": "DL04 20210055443",
+      "tier": "T2",
+      "start": 726,
+      "end": 742
+    },
+    {
+      "type": "PERSON",
+      "value": "Neha Mukherjee",
+      "tier": "T2",
+      "start": 752,
+      "end": 766
+    },
+    {
+      "type": "PERSON",
+      "value": "Neeraj Kulkarni",
+      "tier": "T2",
+      "start": 1244,
+      "end": 1259
+    },
+    {
+      "type": "EMPLOYEE_ID",
+      "value": "EMP-44102",
+      "tier": "T2",
+      "start": 1273,
+      "end": 1282
+    },
+    {
+      "type": "PHONE",
+      "value": "98200 54321",
+      "tier": "T2",
+      "start": 1417,
+      "end": 1428
+    },
+    {
+      "type": "MEDICAL_RECORD_NUMBER",
+      "value": "00812345",
+      "tier": "T2",
+      "start": 1507,
+      "end": 1515
+    },
+    {
+      "type": "DATE_OF_BIRTH",
+      "value": "30/08/1971",
+      "tier": "T2",
+      "start": 1521,
+      "end": 1531
+    },
+    {
+      "type": "DIAGNOSIS",
+      "value": "Ischemic heart disease post coronary angioplasty",
+      "tier": "T2",
+      "start": 1544,
+      "end": 1592
+    },
+    {
+      "type": "PRESCRIPTION",
+      "value": "Clopidogrel 75 mg once daily",
+      "tier": "T2",
+      "start": 1605,
+      "end": 1633
+    },
+    {
+      "type": "INSURANCE_POLICY",
+      "value": "MAX-BUPA-112233",
+      "tier": "T2",
+      "start": 1665,
+      "end": 1680
+    },
+    {
+      "type": "SECRET",
+      "value": "mysql://dw_user:Sup3r$ecr3t!2026@192.168.10.50:3306/warehouse",
+      "tier": "T2",
+      "subtype": "DATABASE_URI",
+      "start": 1751,
+      "end": 1812
+    },
+    {
+      "type": "SECRET",
+      "value": "C0mpl3x#P@ssw0rd99",
+      "tier": "T2",
+      "subtype": "PASSWORD",
+      "start": 1854,
+      "end": 1872
+    },
+    {
+      "type": "SECRET",
+      "value": "TEST_AWS_KEY_EXAMPLE_B",
+      "tier": "T2",
+      "subtype": "AWS_KEY",
+      "start": 1908,
+      "end": 1929
+    },
+    {
+      "type": "SECRET",
+      "value": "TEST_AWS_SECRET_EXAMPLE_B",
+      "tier": "T2",
+      "subtype": "AWS_SECRET",
+      "start": 1937,
+      "end": 1960
+    },
+    {
+      "type": "SECRET",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NDMyMTA5ODc2Iiwicm9sZSI6InVzZXIifQ.3w_Up0wM7m2K1l0n9J8i7h6g5f4e3d2c1b0a9Z8y7x",
+      "tier": "T2",
+      "subtype": "JWT",
+      "start": 1998,
+      "end": 2124
+    },
+    {
+      "type": "SECRET",
+      "value": "https://example.com/alerts/webhook/test_b",
+      "tier": "T2",
+      "subtype": "WEBHOOK_URL",
+      "start": 2149,
+      "end": 2269
+    },
+    {
+      "type": "DOCUMENT_LABEL",
+      "value": "TRADE SECRET - strict NDA restricted",
+      "tier": "T2",
+      "start": 2436,
+      "end": 2472
+    },
+    {
+      "type": "BUSINESS_CONFIDENTIAL",
+      "value": "Project Falcon",
+      "tier": "T2",
+      "start": 2477,
+      "end": 2491
+    },
+    {
+      "type": "BUSINESS_CONFIDENTIAL",
+      "value": "acquisition of QuickPay Gateway",
+      "tier": "T2",
+      "start": 2493,
+      "end": 2524
+    }
+  ],
+  "must_not_flag_traps": [
+    {
+      "type": "HELPLINE_PUBLIC",
+      "value": "1860 500 8822",
+      "reason": "Toll-free public helpline",
+      "start": 844,
+      "end": 857
+    },
+    {
+      "type": "ORDER_REF",
+      "value": "765432109876",
+      "reason": "Internal order reference",
+      "start": 912,
+      "end": 924
+    },
+    {
+      "type": "TICKET_REF",
+      "value": "5544 3322 1100",
+      "reason": "Internal ticket reference",
+      "start": 943,
+      "end": 957
+    },
+    {
+      "type": "TRACKING_NO",
+      "value": "9988 7766 5544 3322",
+      "reason": "Tracking number",
+      "start": 1000,
+      "end": 1019
+    },
+    {
+      "type": "GENERAL_AMOUNT",
+      "value": "INR 300",
+      "reason": "Processing fee without income cue",
+      "start": 1040,
+      "end": 1047
+    },
+    {
+      "type": "COMMON_PHRASE",
+      "value": "customer support is available",
+      "reason": "Dictionary phrase",
+      "start": 1054,
+      "end": 1083
+    },
+    {
+      "type": "LEGAL_PHRASE",
+      "value": "terms and conditions apply",
+      "reason": "Standard boilerplate",
+      "start": 1107,
+      "end": 1133
+    },
+    {
+      "type": "INVOICE_NUM",
+      "value": "INV-2026-331122",
+      "reason": "Invoice number",
+      "start": 1153,
+      "end": 1168
+    },
+    {
+      "type": "INVOICE_DATE",
+      "value": "25-01-2026",
+      "reason": "Invoice processing date",
+      "start": 1182,
+      "end": 1192
+    },
+    {
+      "type": "HINDI_PHRASE",
+      "value": "ग्राहकों की सूची संलग्न है",
+      "reason": "General Hindi phrase",
+      "start": 2403,
+      "end": 2429
+    }
+  ]
+}

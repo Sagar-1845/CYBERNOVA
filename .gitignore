@@ -17,6 +17,7 @@ __pycache__/
 
 # Production Build Output
 dist/
+dist-eval/
 build/
 out/
 
@@ -37,6 +38,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 *.log
+*.traineddata
+*.traineddata.gz
 screenshot_*.png
 lighthouse*.json
 privaguard_member3_security.zip
@@ -47,7 +50,12 @@ scratch/
 verify_*.js
 verify_*.cjs
 inspect_*.js
+profile_*.js
+profile_*.json
+trace_*.json
+constellation_verification_results.json
 saveweb2zip-*/
+tests/reports/
 PRIVAGUARD_AI/
 
 # OS Metadata

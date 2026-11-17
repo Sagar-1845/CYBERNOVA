@@ -13,11 +13,12 @@ export type DocumentSourceType =
   | 'metadata';
 
 export interface DocumentNode {
-  ref: string; // e.g. "page:1", "sheet:Sheet1!A1", "json:$.users[0].name", "table:1:row:2"
+  ref: string; // e.g. "txt:line_3", "sheet:Sheet1!A1", "json:$.users[0].name", "table:1:row:2"
   text: string;
   start: number;
   end: number;
   source: DocumentSourceType;
+  line?: number; // True 1-based line number in rawText
   page?: number;
   confidence?: number;
 }

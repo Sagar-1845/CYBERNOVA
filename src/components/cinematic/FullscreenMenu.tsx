@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { CHAPTERS } from './types';
-import { X, ArrowRight, ShieldCheck, Cpu, Database, Activity, FileText } from 'lucide-react';
+import { X, ArrowRight, ShieldCheck, Cpu, Database, Activity, FileText, Scissors } from 'lucide-react';
 
 interface FullscreenMenuProps {
   isOpen: boolean;
@@ -113,6 +113,27 @@ export const FullscreenMenu: React.FC<FullscreenMenuProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Scan & Redact DLP Route */}
+            <Link
+              to="/scan-redact"
+              onClick={onClose}
+              className="p-5 border border-[#37d3fc]/40 hover:border-[#37d3fc] bg-[#0a1f3d]/60 hover:bg-[#0a1f3d]/90 rounded transition-all group clip-chamfer sm:col-span-2 shadow-[0_0_12px_rgba(55,211,252,0.1)]"
+            >
+              <div className="flex items-center justify-between mb-3 text-[#37d3fc]">
+                <div className="flex items-center gap-2">
+                  <Scissors className="w-5 h-5" />
+                  <span className="text-[10px] font-ui uppercase tracking-widest px-2 py-0.5 rounded bg-[#37d3fc]/20 text-[#37d3fc] border border-[#37d3fc]/30 font-bold">
+                    NEW // HACKATHON DLP ENGINE
+                  </span>
+                </div>
+                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </div>
+              <div className="font-headline text-lg text-white mb-1">AUTOMATED DLP SCAN & REDACT</div>
+              <p className="text-xs text-[#94a3b8] font-body">
+                Multi-format document redaction for PDF, Word (.docx) & text. Full, partial, irreversible masking with zero raw PII leaks.
+              </p>
+            </Link>
+
             {/* Demo Route */}
             <Link
               to="/demo"

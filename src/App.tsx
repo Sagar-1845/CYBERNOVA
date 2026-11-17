@@ -9,15 +9,17 @@ import { Navbar } from '@/components/Navbar';
 // Code-split all routes so 3D chunks load ONLY on "/"
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const GatewayDemoPage = lazy(() => import('@/pages/GatewayDemoPage'));
+const ConsentRightsPage = lazy(() => import('@/pages/ConsentRightsPage'));
 const AuditLogPage = lazy(() => import('@/pages/AuditLogPage'));
 const MetricsPage = lazy(() => import('@/pages/MetricsPage'));
 const DatasetPage = lazy(() => import('@/pages/DatasetPage'));
 const DocumentIntelligencePage = lazy(() => import('@/pages/DocumentIntelligencePage'));
+const ScanRedactPage = lazy(() => import('@/pages/ScanRedactPage'));
 
 // Route loading fallback with smooth skeleton/pulse
 const RouteLoadingFallback: React.FC = () => (
   <div className="min-h-[70vh] flex flex-col items-center justify-center p-8 bg-[#06080d]">
-    <div className="w-10 h-10 rounded-full border-2 border-neon border-t-transparent animate-spin mb-4" />
+    <div className="w-10 h-10 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin mb-4" />
     <span className="text-xs font-mono text-muted-foreground animate-pulse tracking-widest uppercase">
       ZEROLEAK AI // INITIALIZING PERIMETER...
     </span>
@@ -42,33 +44,39 @@ const AppContent: React.FC<{
   const isHome = location.pathname === '/';
 
   return (
-    <div className="min-h-screen bg-[#050a1c] text-[#d5ddfd] transition-colors duration-300 font-sans selection:bg-[#37d3fc]/20 selection:text-[#37d3fc]">
+    <div className="min-h-screen bg-[#020108] text-[#d5ddfd] transition-colors duration-300 font-sans selection:bg-[#37d3fc]/20 selection:text-[#37d3fc]">
       {/* Sonner Toast Notification Center */}
       <Toaster position="top-right" richColors closeButton theme={theme} />
 
-      {/* Render top Navbar on internal operational pages (/demo, /documents, /audit, /metrics, /dataset) */}
+      {/* Render top Navbar on internal operational pages */}
       {!isHome && <Navbar theme={theme} onToggleTheme={onToggleTheme} />}
 
       <main className="relative">
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>
-            {/* Route 1: Landing Page (Hubtown-Grade ZeroLeak Experience) */}
+            {/* Route 1: Landing Page */}
             <Route path="/" element={<LandingPage />} />
 
             {/* Route 2: Gateway Demo Page */}
             <Route path="/demo" element={<GatewayDemoPage />} />
 
-            {/* Route 3: Universal Document Intelligence Page */}
+            {/* Route 3: DPDP Consent & Rights Portal */}
+            <Route path="/consent" element={<ConsentRightsPage />} />
+
+            {/* Route 4: Universal Document Intelligence Page */}
             <Route path="/documents" element={<DocumentIntelligencePage />} />
 
-            {/* Route 4: Audit Log Page */}
+            {/* Route 5: Audit Log Page */}
             <Route path="/audit" element={<AuditLogPage />} />
 
-            {/* Route 5: Metrics Page */}
+            {/* Route 6: Metrics Page */}
             <Route path="/metrics" element={<MetricsPage />} />
 
-            {/* Route 6: Synthetic Dataset Page */}
+            {/* Route 7: Synthetic Dataset Page */}
             <Route path="/dataset" element={<DatasetPage />} />
+
+            {/* Route 8: Scan & Redact Page */}
+            <Route path="/scan-redact" element={<ScanRedactPage />} />
 
             {/* Catch-all redirect to Landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -83,8 +91,8 @@ export const App: React.FC = () => {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
-    const savedTheme = (localStorage.getItem('zeroleak-theme') ||
-      localStorage.getItem('privaguard-theme')) as 'dark' | 'light' | null;
+    const savedTheme = (localStorage.getItem('privaguard-theme') ||
+      localStorage.getItem('zeroleak-theme')) as 'dark' | 'light' | null;
     const initialTheme = savedTheme || 'dark';
     setTheme(initialTheme);
     if (initialTheme === 'dark') {
@@ -97,7 +105,7 @@ export const App: React.FC = () => {
   const handleToggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
-    localStorage.setItem('zeroleak-theme', newTheme);
+    localStorage.setItem('privaguard-theme', newTheme);
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {

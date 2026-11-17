@@ -136,7 +136,7 @@ export const DatasetPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'zeroleak_synthetic_test_fixtures.json';
+    a.download = 'privaguard_synthetic_test_fixtures.json';
     a.click();
     toast.success('Downloaded synthetic benchmark dataset.');
   };
